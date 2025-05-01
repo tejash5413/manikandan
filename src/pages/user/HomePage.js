@@ -48,14 +48,14 @@ function HomePage({ isDarkMode, toggleDarkMode }) {
                                     style={{ width: '250px', marginBottom: '30px' }}
                                     className="img-fluid"
                                 />
-                                <h1 className="display-3 fw-bold text-white mb-3">
+                                <h1 className="display-4 fw-bold text-white">
                                     <Typewriter
                                         words={['Manikandan Academy']}
-                                        loop={0} // or Infinity for endless loop
+                                        loop={true}
                                         cursor
-                                        cursorStyle="|"
-                                        typeSpeed={78}
-                                        deleteSpeed={60}
+                                        cursorStyle="_"
+                                        typeSpeed={80}
+                                        deleteSpeed={50}
                                         delaySpeed={2000}
                                     />
                                 </h1>
