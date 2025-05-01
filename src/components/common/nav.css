@@ -1,0 +1,29 @@
+.nav-mobile-links .nav-link {
+  font-size: 1.05rem;
+  padding: 10px 15px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+.nav-mobile-links .nav-link:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+  transform: translateX(5px);
+}
+
+.custom-drawer {
+  width: 85vw !important;
+  /* Responsive width */
+  max-width: 300px;
+}
+
+.navbar-toggler {
+  z-index: 1051;
+  /* Above the drawer */
+  position: relative;
+}
+
+nav .nav-link {
+  color: white !important;
+}
