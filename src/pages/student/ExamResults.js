@@ -21,13 +21,14 @@ ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip,
 
 
 function ExamResults() {
-    const navigate = useNavigate();
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(true);
     const [rollno, setRollno] = useState('');
     const [filterType, setFilterType] = useState('All');
     const itemsPerPage = 5;
     const [currentPage, setCurrentPage] = useState(1);
+
+
     useEffect(() => {
         AOS.init({ duration: 1000 });
         const storedRollno = localStorage.getItem("studentRollno");
@@ -39,6 +40,7 @@ function ExamResults() {
             navigate("/student-login");
         }
     }, []);
+    const navigate = useNavigate();
 
     const fetchResults = async () => {
         const storedRollno = localStorage.getItem("studentRollno");

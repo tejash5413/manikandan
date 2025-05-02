@@ -16,6 +16,7 @@ function UploadResults() {
     const [filterDate, setFilterDate] = useState('');
     const [filterTestType, setFilterTestType] = useState('');
     const itemsPerPage = 5;
+    const [filterRoll, setFilterRoll] = useState('');
 
     const [formData, setFormData] = useState({
         rollno: '',
@@ -27,7 +28,9 @@ function UploadResults() {
         chemistry: '',
         botany: '',
         zoology: '',
-        rank: ''
+        rank: '',
+        class: '',
+        batch: ''
     });
 
     const fetchResults = async () => {
@@ -55,9 +58,10 @@ function UploadResults() {
         return `${day}-${month}-${year}`;
     };
     const filteredResults = resultList.filter(row => {
+        const matchesRoll = !filterRoll || row.rollno?.toString().includes(filterRoll);
         const matchesDate = !filterDate || row.date === filterDate || formatDate(row.date) === formatDate(filterDate);
         const matchesTestType = !filterTestType || row.testtype === filterTestType;
-        return matchesDate && matchesTestType;
+        return matchesRoll && matchesDate && matchesTestType;
     });
     const paginatedResults = filteredResults.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     const totalPages = Math.ceil(filteredResults.length / itemsPerPage);
@@ -77,7 +81,7 @@ function UploadResults() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const requiredFields = ['rollno', 'name', 'testname', 'date', 'testtype', 'physics', 'chemistry', 'botany', 'zoology', 'rank'];
+        const requiredFields = ['rollno', 'name', 'testname', 'date', 'testtype', 'physics', 'chemistry', 'botany', 'zoology', 'rank', 'class', 'batch'];
         for (let field of requiredFields) {
             if (!formData[field]) {
                 toast.error(`Please fill in ${field}`);
@@ -99,7 +103,8 @@ function UploadResults() {
             toast.success(editMode ? "Result updated successfully!" : "Result uploaded successfully!");
             setFormData({
                 rollno: '', name: '', testname: '', date: '', testtype: 'Daily',
-                physics: '', chemistry: '', botany: '', zoology: '', rank: ''
+                physics: '', chemistry: '', botany: '', zoology: '', rank: '', class: '',
+                batch: ''
             });
             setEditMode(false);
             fetchResults();
@@ -123,8 +128,8 @@ function UploadResults() {
             const headers = data[0];
             const rows = data.slice(1);
 
-            if (!headers.includes("rollno") || !headers.includes("testname")) {
-                toast.error("Excel must contain correct headers: rollno, name, testname, date, testtype, physics, chemistry, botany, zoology, rank");
+            if (!headers.includes("rollno") || !headers.includes("testname") || !headers.includes("class") || !headers.includes("batch")) {
+                toast.error("Excel must contain correct headers: rollno, name, testname, date, testtype, physics, chemistry, botany, zoology, rank,, class, batch");
                 return;
             }
 
@@ -247,6 +252,15 @@ function UploadResults() {
             <div className="row g-2 mb-3">
                 <div className="col-md-6">
                     <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Filter by Roll No"
+                        value={filterRoll}
+                        onChange={(e) => setFilterRoll(e.target.value)}
+                    />
+                </div>
+                <div className="col-md-6">
+                    <input
                         type="date"
                         className="form-control"
                         value={filterDate}
@@ -285,6 +299,8 @@ function UploadResults() {
                                     <tr>
                                         <th>Roll No</th>
                                         <th>Name</th>
+                                        <th>Class</th>
+                                        <th>Batch</th>
                                         <th>Test Name</th>
                                         <th>Date</th>
                                         <th>Test Type</th>
@@ -301,6 +317,8 @@ function UploadResults() {
                                         <tr key={idx}>
                                             <td>{row.rollno}</td>
                                             <td>{row.name}</td>
+                                            <td>{row.class}</td>
+                                            <td>{row.batch}</td>
                                             <td>{row.testname}</td>
                                             <td>{formatDate(row.date)}</td>
                                             <td>{row.testtype}</td>
@@ -374,6 +392,8 @@ function UploadResults() {
                             <tr>
                                 <th>Roll No</th>
                                 <th>Name</th>
+                                <th>Class</th>
+                                <th>Batch</th>
                                 <th>Test Name</th>
                                 <th>Date</th>
                                 <th>Test Type</th>
@@ -390,6 +410,8 @@ function UploadResults() {
                                 <tr key={idx}>
                                     <td>{row.rollno}</td>
                                     <td>{row.name}</td>
+                                    <td>{row.class}</td>
+                                    <td>{row.batch}</td>
                                     <td>{row.testname}</td>
                                     <td>{formatDate(row.date)}</td>
                                     <td>{row.testtype}</td>

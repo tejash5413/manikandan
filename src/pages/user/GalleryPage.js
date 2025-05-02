@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { Spinner } from 'react-bootstrap';
+import { LifeLine } from 'react-loading-indicators';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
 
@@ -42,7 +42,7 @@ function Gallery() {
 
             {loading ? (
                 <div className="text-center">
-                    <Spinner animation="border" variant="primary" />
+                    <LifeLine color="#cc3131" size="medium" text="Loading" textColor="" />
                 </div>
             ) : (
                 <PhotoProvider>

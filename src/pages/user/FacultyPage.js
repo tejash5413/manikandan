@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { Spinner } from 'react-bootstrap';
+import { Atom } from 'react-loading-indicators';
 
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5RL4Ke5ktuMbzEJ88Hy6U-8VOX514Su9dTxZjOmEME47G3Yc5ZFR30hzCCAHb8wDJsA/exec";
 
@@ -70,8 +70,7 @@ function FacultyPage() {
 
             {loading ? (
                 <div className="text-center">
-                    <Spinner animation="border" variant="primary" />
-                </div>
+                    <Atom color="#32cd32" size="medium" text="" textColor="" />                </div>
             ) : (
                 <div className="row g-4">
                     {faculty.map((item, index) => (

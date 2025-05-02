@@ -20,6 +20,7 @@ import StudentLogin from '../pages/student/StudentLogin';
 import StudentDashboard from '../pages/student/StudentDashboard';
 import ExamResults from '../pages/student/ExamResults';
 import Assignments from '../pages/student/Assignments';
+import ProgressCard from '../pages/student/ProgressCard';
 
 // Admin Pages
 import AdminLogin from '../pages/admin/AdminLogin';
@@ -63,6 +64,11 @@ function AppRoutes() {
             <Route path="/student-dashboard/assignments" element={
                 <StudentPrivateRoute>
                     <Assignments />
+                </StudentPrivateRoute>
+            } />
+            <Route path="/student-dashboard/progress-card" element={
+                <StudentPrivateRoute>
+                    <ProgressCard />
                 </StudentPrivateRoute>
             } />
 

@@ -92,7 +92,7 @@ function HomePage({ isDarkMode, toggleDarkMode }) {
                 <div className="container">
                     <div className="row align-items-center">
                         <div className="col-md-4 text-center mb-4 mb-md-0" data-aos="zoom-in">
-                            <img src="/images/chairman.png" alt="Chairman" className="img-fluid rounded-circle shadow" style={{ width: "200px" }} />
+                            <img src="/images/chairman.jpeg" alt="Chairman" className="img-fluid  shadow" style={{ width: "300px" }} />
                         </div>
                         <div className="col-md-8" data-aos="fade-left">
                             <h3 >Mr. Siva Koteswara Rao - Founder & Chairman</h3>
