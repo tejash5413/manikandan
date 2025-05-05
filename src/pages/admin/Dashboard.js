@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { toast } from 'react-toastify';
+import { getAuth, signOut } from 'firebase/auth';
+
 
 function AdminDashboard() {
     const navigate = useNavigate();
@@ -11,13 +13,21 @@ function AdminDashboard() {
         AOS.init({ duration: 1000 });
     }, []);
 
-    const handleLogout = () => {
-        localStorage.removeItem('adminLoggedIn');
+    const handleLogout = async () => {
+        const auth = getAuth();
+        try {
+            await signOut(auth); // 🔐 Sign out from Firebase
+            localStorage.removeItem('adminLoggedIn');
+            toast.success("👋 Logged out successfully!", { autoClose: 2000 });
+            localStorage.removeItem('sessionToastShown'); // ✅ clear toast blocker
 
-        toast.info("Logged out successfully!", { autoClose: 2000 });
-        setTimeout(() => {
-            navigate('/admin-login');
-        }, 2000);
+            setTimeout(() => {
+                navigate('/admin-login');
+            }, 1000);
+        } catch (error) {
+            toast.error("❌ Logout failed!");
+            console.error("Logout error:", error.message);
+        }
     };
 
     return (
@@ -25,7 +35,37 @@ function AdminDashboard() {
             <h2 className="text-center text-primary mb-5" data-aos="fade-down">Admin Dashboard</h2>
 
             <div className="row g-4">
-
+                {/* Create Student Credentials */}
+                <div className="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="300">
+                    <div className="card shadow-sm border-0 text-center h-100">
+                        <div className="card-body">
+                            <i className="bi bi-person-plus fs-1 text-primary mb-3"></i>
+                            <h5 className="card-title">Create Student Login</h5>
+                            <p className="card-text small">Generate login credentials for NEET students.</p>
+                            <button className="btn btn-outline-primary mt-2 w-100" onClick={() => navigate('/admin-dashboard/create-student')}>
+                                Go to Student Creator
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {/* Students List */}
+                <div className="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                    <div className="card shadow-sm border-0 text-center h-100">
+                        <div className="card-body">
+                            <i className="fas fa-users fs-1 text-success mb-3"></i>
+                            <h5 className="card-title fw-bold">Manage Students</h5>
+                            <p className="card-text small">
+                                View, edit, or delete student profiles and manage login credentials.
+                            </p>
+                            <button
+                                className="btn btn-outline-success mt-2 w-100"
+                                onClick={() => navigate('/admin-dashboard/students')}
+                            >
+                                <i className="fas fa-user-cog me-2"></i>Go to Students
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 {/* Manage Courses */}
                 <div className="col-md-6 col-lg-4" data-aos="fade-up">
                     <div className="card shadow-sm border-0 text-center h-100">
@@ -83,6 +123,25 @@ function AdminDashboard() {
                         </div>
                     </div>
                 </div>
+
+
+                {/*  Create Exams  */}
+                <div className="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                    <div className="card shadow-sm border-0 text-center h-100">
+                        <div className="card-body">
+                            <i className="bi bi-journal-plus fs-1 text-primary mb-3"></i>
+                            <h5 className="card-title">Create Exams/Manage Exams</h5>
+                            <p className="card-text small">Schedule exams and define syllabus for students.</p>
+                            <button
+                                className="btn btn-outline-primary mt-2 w-100"
+                                onClick={() => navigate('/admin-dashboard/select-exam')}
+                            >
+                                Go to Exam Setup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Manage Assignments */}
                 <div className="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="500">
                     <div className="card shadow-sm border-0 text-center h-100">

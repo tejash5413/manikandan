@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import './CoursesPage.css';
-import { Spinner } from 'react-bootstrap';
+import { Atom } from 'react-loading-indicators';
 
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5RL4Ke5ktuMbzEJ88Hy6U-8VOX514Su9dTxZjOmEME47G3Yc5ZFR30hzCCAHb8wDJsA/exec";
 
@@ -44,7 +44,7 @@ function CoursesPage() {
             <h2 className="text-center text-primary mb-5" data-aos="fade-down">Our Courses</h2>
             {loading ? (
                 <div className="text-center">
-                    <Spinner animation="border" variant="primary" />
+                    <Atom animation="border" text="Loading" variant="primary" />
                 </div>
             ) : (
                 <div className="row g-4">
@@ -70,13 +70,15 @@ function CoursesPage() {
                             </div>
                         </div>
                     ))}
+                    <div className="text-center mt-5">
+                        <Link to="/apply" className="btn btn-primary btn-lg shadow-lg">
+                            Apply Now
+                        </Link>
+                    </div>
                 </div>
+
             )}
-            <div className="text-center mt-5">
-                <Link to="/apply" className="btn btn-primary btn-lg shadow-lg">
-                    Apply Now
-                </Link>
-            </div>
+
         </div>
     );
 }

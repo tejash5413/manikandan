@@ -6,6 +6,9 @@ import { FaUserGraduate, FaIdBadge, FaSchool, FaCalendarCheck, FaFlask, FaAtom, 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useNavigate } from 'react-router-dom';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { toast } from 'react-toastify';
 
 function ProgressCard() {
     const navigate = useNavigate();
@@ -31,15 +34,26 @@ function ProgressCard() {
 
     const fetchResults = async (rollno) => {
         try {
+            // 🔹 First: Get student details from Firestore
+            const q = query(collection(db, "students"), where("rollno", "==", rollno));
+            const snapshot = await getDocs(q);
+
+            if (!snapshot.empty) {
+                const student = snapshot.docs[0].data();
+                setName(student.name || '');
+                setStudentClass(student.class || '');
+                setBatch(student.batch || '');
+            } else {
+                console.warn("Student not found in Firestore");
+            }
+
+            // 🔹 Then: Fetch performance results from Google Sheets
             const response = await fetch("https://script.google.com/macros/s/AKfycbx5RL4Ke5ktuMbzEJ88Hy6U-8VOX514Su9dTxZjOmEME47G3Yc5ZFR30hzCCAHb8wDJsA/exec?type=results");
             const data = await response.json();
 
-            const filtered = data.filter(entry => String(entry.rollno || entry.RollNo || '').trim() === rollno.trim());
-            if (filtered.length > 0) {
-                setName(filtered[0].name || filtered[0].Name || '');
-                setStudentClass(filtered[0].Class || filtered[0].class || filtered[0].L || '');
-                setBatch(filtered[0].Batch || filtered[0].batch || filtered[0].M || '');
-            }
+            const filtered = data.filter(entry =>
+                String(entry.rollno || entry.RollNo || '').trim() === rollno.trim()
+            );
 
             const daily = filtered.filter(t => (t.testtype || t.TestType)?.trim() === 'Daily').length;
             const weekend = filtered.filter(t => (t.testtype || t.TestType)?.trim() === 'Weekend').length;
@@ -48,7 +62,11 @@ function ProgressCard() {
             setTestCounts({ daily, weekend, grand });
             setResults(filtered);
 
-            const sortedByDate = [...filtered].sort((a, b) => new Date(a.date || a.Date) - new Date(b.date || b.Date));
+            // Rank trend logic
+            const sortedByDate = [...filtered].sort((a, b) =>
+                new Date(a.date || a.Date) - new Date(b.date || b.Date)
+            );
+
             if (sortedByDate.length >= 2) {
                 const latest = parseInt(sortedByDate[sortedByDate.length - 1].rank || sortedByDate[sortedByDate.length - 1].Rank);
                 const previous = parseInt(sortedByDate[sortedByDate.length - 2].rank || sortedByDate[sortedByDate.length - 2].Rank);
@@ -58,9 +76,9 @@ function ProgressCard() {
                     else setRankTrend('same');
                 }
             }
-
         } catch (error) {
             console.error("Error fetching results:", error);
+            toast.error("❌ Failed to load results or student data.");
         } finally {
             setLoading(false);
         }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'react-toastify';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -11,38 +12,44 @@ function AdminLogin() {
     const navigate = useNavigate();
     const [credentials, setCredentials] = useState({ email: '', password: '' });
     const [showPassword, setShowPassword] = useState(false);
-
-    const adminUser = {
-        email: "admin@manikandanacademy.com",
-        password: "Admin@123"
-    };
-
+    const auth = getAuth();
     useEffect(() => {
         AOS.init({ duration: 1000 });
-    }, []);
+
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                navigate('/admin-dashboard');
+            }
+        });
+
+        return () => unsubscribe(); // 👈 Important cleanup to prevent multiple triggers
+    }, [auth, navigate]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setCredentials(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (credentials.email === adminUser.email && credentials.password === adminUser.password) {
-            localStorage.setItem('adminLoggedIn', 'true');
-
+        try {
+            await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
             toast.success("✅ Login Successful!");
-            setTimeout(() => navigate('/admin-dashboard'), 1000);
-        } else {
+            localStorage.setItem('adminLoggedIn', 'true');
+            localStorage.removeItem('sessionToastShown'); // ✅ clear toast blocker
+
+            // Navigate will be triggered by onAuthStateChanged
+        } catch (error) {
             toast.error("❌ Invalid Credentials!");
+            console.error("Login error:", error.message);
         }
     };
 
     return (
         <div className="container py-5">
             <div className="row justify-content-center align-items-center">
-                {/* Lottie Animation */}
+                {/* Animation */}
                 <div className="col-12 col-md-6 text-center mb-4" data-aos="zoom-in">
                     <Lottie animationData={adminLoginAnimation} loop={true} style={{ height: 250 }} />
                 </div>
@@ -50,8 +57,8 @@ function AdminLogin() {
                 {/* Login Form */}
                 <div className="col-lg-6 col-md-8" data-aos="fade-left">
                     <div className="card shadow-lg border-0 p-4 rounded-4">
-                        <h3 className="text-center  mb-4">
-                            <i className="fas fa-user-shield me-2 "></i>Admin Login
+                        <h3 className="text-center mb-4">
+                            <i className="fas fa-user-shield me-2"></i>Admin Login
                         </h3>
                         <form onSubmit={handleSubmit}>
                             <div className="mb-3">

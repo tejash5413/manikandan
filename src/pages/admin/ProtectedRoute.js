@@ -1,10 +1,10 @@
-// src/services/AdminPrivateRoute.jsx
+// src/routes/ProtectedRoute.jsx
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'react-toastify';
 
-const AdminPrivateRoute = ({ children }) => {
+const ProtectedRoute = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -14,9 +14,9 @@ const AdminPrivateRoute = ({ children }) => {
             if (user) {
                 setIsAuthenticated(true);
             } else {
-                if (!localStorage.getItem('sessionToastShown')) {
-                    toast.error('Session expired. Please log in as admin.');
-                    localStorage.setItem('sessionToastShown', 'true'); // show once
+                if (!localStorage.getItem("sessionToastShown")) {
+                    toast.error("Session expired. Please log in as admin.");
+                    localStorage.setItem("sessionToastShown", "true");
                 }
                 setIsAuthenticated(false);
             }
@@ -26,9 +26,9 @@ const AdminPrivateRoute = ({ children }) => {
         return () => unsubscribe();
     }, []);
 
-    if (loading) return null; // Or a spinner if you prefer
+    if (loading) return null;
 
     return isAuthenticated ? children : <Navigate to="/admin-login" replace />;
 };
 
-export default AdminPrivateRoute;
+export default ProtectedRoute;

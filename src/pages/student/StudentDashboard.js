@@ -3,8 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { toast } from 'react-toastify';
-import { FaUserGraduate, FaIdCard, FaChalkboardTeacher, FaCalendarAlt, FaSignOutAlt, FaTasks, FaChartLine, FaRegFileAlt } from 'react-icons/fa';
+import { FaUserGraduate, FaIdCard, FaChalkboardTeacher, FaCalendarAlt, FaSignOutAlt, FaTasks, FaChartLine, FaRegFileAlt, FaClipboardCheck } from 'react-icons/fa';
+import { doc } from 'firebase/firestore';
+import { onSnapshot } from 'firebase/firestore';
 
+import { getAuth } from 'firebase/auth';
+import { db } from '../../services/firebase';
 function StudentDashboard() {
     const navigate = useNavigate();
     const [rollno, setRollno] = useState('');
@@ -12,33 +16,31 @@ function StudentDashboard() {
     const [studentClass, setStudentClass] = useState('');
     const [batch, setBatch] = useState('');
 
+
     useEffect(() => {
-        AOS.init({ duration: 1000 });
-        const storedRollno = localStorage.getItem("studentRollno");
-        if (storedRollno) {
-            setRollno(storedRollno);
-            fetchStudentDetails(storedRollno);
-        } else {
-            toast.error("Session expired. Please log in again.");
-            navigate('/student-login');
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (user) {
+            const studentRef = doc(db, 'students', user.uid);
+
+            // 🔄 Listen for real-time updates
+            const unsubscribe = onSnapshot(studentRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    setName(data.name || '');
+                    setRollno(data.rollno || '');
+                    setStudentClass(data.class || '');
+                    setBatch(data.batch || '');
+                }
+            });
+
+            // 🧹 Cleanup listener on unmount
+            return () => unsubscribe();
         }
     }, []);
 
-    const fetchStudentDetails = async (roll) => {
-        try {
-            const response = await fetch("https://script.google.com/macros/s/AKfycbx5RL4Ke5ktuMbzEJ88Hy6U-8VOX514Su9dTxZjOmEME47G3Yc5ZFR30hzCCAHb8wDJsA/exec?type=results");
-            const data = await response.json();
-            const student = data.find(item => String(item.rollno || item.RollNo).trim() === roll.trim());
-            if (student) {
-                setName(student.name || student.Name || '');
-                setStudentClass(student.class || student.Class || student.L || '');
-                setBatch(student.batch || student.Batch || student.M || '');
-            }
-        } catch (error) {
-            toast.error("Failed to fetch student info");
-            console.error("Error:", error);
-        }
-    };
+
 
     const handleLogout = () => {
         toast.info("Logged Out Successfully!");
@@ -104,10 +106,26 @@ function StudentDashboard() {
                     </div>
                 </div>
                 <div className="col-md-3 col-6">
+                    <div className="card border-warning shadow h-100" onClick={() => navigate('/student-dashboard/examinations')} role="button">
+                        <div className="card-body">
+                            <FaClipboardCheck className="display-6 text-warning mb-2" />
+                            <h6 className="fw-bold">Examinations</h6>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-md-3 col-6">
                     <div className="card border-success shadow h-100" onClick={() => navigate('/student-dashboard/exam-results')} role="button">
                         <div className="card-body">
                             <FaChartLine className="display-6 text-success mb-2" />
-                            <h6 className="fw-bold">Exam Results</h6>
+                            <h6 className="fw-bold"> Offline Exam Results</h6>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-md-3 col-6">
+                    <div className="card border-primary shadow h-100" onClick={() => navigate('/student-dashboard/online-exam-results')} role="button">
+                        <div className="card-body">
+                            <FaChartLine className="display-6 text-primary mb-2" />
+                            <h6 className="fw-bold">Online Exam Results</h6>
                         </div>
                     </div>
                 </div>

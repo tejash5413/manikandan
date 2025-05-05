@@ -21,6 +21,10 @@ import StudentDashboard from '../pages/student/StudentDashboard';
 import ExamResults from '../pages/student/ExamResults';
 import Assignments from '../pages/student/Assignments';
 import ProgressCard from '../pages/student/ProgressCard';
+import ExaminationsPage from '../pages/student/ExaminationsPage';
+import StartTestPage from '../pages/student/StartTestPage'; // Make sure this path is correct
+import ExamResultPage from '../pages/student/ExamResultPage';
+import OnlineExamResults from '../pages/student/OnlineExamResults';
 
 // Admin Pages
 import AdminLogin from '../pages/admin/AdminLogin';
@@ -33,7 +37,10 @@ import UploadResults from '../pages/admin/UploadResults';
 import ViewTopperBoard from '../pages/admin/ViewTopperBoard';
 import SiteSettings from '../pages/admin/SiteSettings';
 import ManageAssignments from '../pages/admin/ManageAssignments';
-
+import CreateExamForm from '../pages/admin/CreateExamForm';
+import CreateStudent from '../pages/admin/CreateStudent';
+import ExamSelectionPage from '../pages/admin/ExamSelectionPage';
+import StudentsList from '../pages/admin/StudentsList';
 function AppRoutes() {
     return (
         <Routes>
@@ -71,7 +78,32 @@ function AppRoutes() {
                     <ProgressCard />
                 </StudentPrivateRoute>
             } />
+            <Route path="/student-dashboard/examinations" element={
+                <StudentPrivateRoute>
+                    <ExaminationsPage />
+                </StudentPrivateRoute>
+            } />
+            <Route path="/student-dashboard/start-test/:examId" element={
+                <StudentPrivateRoute>
+                    <StartTestPage />
+                </StudentPrivateRoute>
+            } />
+            <Route path="/student-dashboard/online-exam-results" element={
+                <StudentPrivateRoute>
+                    <OnlineExamResults />
+                </StudentPrivateRoute>
+            } />
+            <Route path="/student-dashboard/online-exam-results/:title" element={
+                <StudentPrivateRoute>
+                    <OnlineExamResults />
+                </StudentPrivateRoute>
+            } />
 
+            <Route path="/student-dashboard/online-exam-results" element={
+                <StudentPrivateRoute>
+                    <OnlineExamResults />
+                </StudentPrivateRoute>
+            } />
             {/* Admin Auth Route */}
             <Route path="/admin-login" element={<AdminLogin />} />
 
@@ -119,6 +151,26 @@ function AppRoutes() {
             <Route path="/admin-dashboard/site-settings" element={
                 <AdminPrivateRoute>
                     <SiteSettings />
+                </AdminPrivateRoute>
+            } />
+            <Route path="/admin-dashboard/create-exams" element={
+                <AdminPrivateRoute>
+                    <CreateExamForm />
+                </AdminPrivateRoute>
+            } />
+            <Route path="/admin-dashboard/select-exam" element={
+                <AdminPrivateRoute>
+                    <ExamSelectionPage />
+                </AdminPrivateRoute>
+            } />
+            <Route path="/admin-dashboard/create-student" element={
+                <AdminPrivateRoute>
+                    <CreateStudent />
+                </AdminPrivateRoute>
+            } />
+            <Route path="/admin-dashboard/students" element={
+                <AdminPrivateRoute>
+                    <StudentsList />
                 </AdminPrivateRoute>
             } />
         </Routes>

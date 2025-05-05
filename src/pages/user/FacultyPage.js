@@ -70,7 +70,7 @@ function FacultyPage() {
 
             {loading ? (
                 <div className="text-center">
-                    <Atom color="#32cd32" size="medium" text="" textColor="" />                </div>
+                    <Atom color="#32cd32" size="medium" text="Loading" textColor="" />                </div>
             ) : (
                 <div className="row g-4">
                     {faculty.map((item, index) => (
