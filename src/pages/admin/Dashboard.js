@@ -112,11 +112,11 @@ function AdminDashboard() {
                     <div className="card shadow-sm border-0 text-center h-100">
                         <div className="card-body">
                             <i className="bi bi-person-lines-fill fs-1 text-info mb-3"></i>
-                            <h5 className="card-title">Manage Applications</h5>
+                            <h5 className="card-title">Manage Applications & ContactPage</h5>
                             <p className="card-text small ">View all student applications submitted.</p>
                             <button
                                 className="btn btn-outline-info mt-2 w-100"
-                                onClick={() => navigate('/admin-dashboard/manage-applications')}
+                                onClick={() => navigate('/admin-dashboard/manage-center')}
                             >
                                 Go to Applications
                             </button>

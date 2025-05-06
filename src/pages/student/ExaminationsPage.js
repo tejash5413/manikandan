@@ -65,7 +65,7 @@ const ExaminationsPage = () => {
     };
 
     return (
-        <div className="container py-5">
+        <div className="container py-5 mt-5">
             <h2 className="text-center fw-bold mb-5" data-aos="fade-down" style={{
                 background: "linear-gradient(to right, #0d6efd, #20c997)",
                 WebkitBackgroundClip: "text",

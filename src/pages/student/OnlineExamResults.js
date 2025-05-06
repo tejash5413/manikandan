@@ -25,14 +25,25 @@ const OnlineExamResults = () => {
     useEffect(() => {
         const fetchAllResults = async () => {
             try {
+                const studentClass = localStorage.getItem("studentClass"); // 👈 fetch class from localStorage
                 const snapshot = await getDocs(collection(db, "results"));
                 const resultsData = snapshot.docs.map(doc => doc.data());
-                setAllResults(resultsData);
-                const examTitles = [...new Set(resultsData.map(r => r.examTitle))];
+
+                // ✅ Filter results where allowedClass is not set or includes studentClass
+                const classFilteredResults = resultsData.filter(r => {
+                    if (!r.allowedClass || r.allowedClass.length === 0) return true;
+                    return r.allowedClass.includes(studentClass);
+                });
+
+                setAllResults(classFilteredResults);
+
+                // Unique exams available
+                const examTitles = [...new Set(classFilteredResults.map(r => r.examTitle))];
                 setAvailableExams(examTitles);
 
+                // If title param is passed, find this exam result for current student
                 if (title) {
-                    const filtered = resultsData.filter(r =>
+                    const filtered = classFilteredResults.filter(r =>
                         r.examTitle?.trim().toLowerCase() === decodeURIComponent(title).trim().toLowerCase()
                     );
                     const studentResult = filtered.find(r => r.studentId === rollno);
@@ -50,6 +61,7 @@ const OnlineExamResults = () => {
         fetchAllResults();
     }, [title, rollno]);
 
+
     if (loading) return (
         <div className="text-center mt-5">
             <i className="fas fa-spinner fa-spin text-primary fs-4"></i>
@@ -59,7 +71,7 @@ const OnlineExamResults = () => {
 
     if (!title) {
         return (
-            <div className="container py-4 mt-4">
+            <div className="container py-4 mt-5">
                 <h4 className="text-primary mb-4">📋 Select an Exam to View Result</h4>
                 <button className="btn btn-outline-danger mb-3" onClick={() => navigate('/student-dashboard')}>
                     <FaArrowLeft className="me-2" />Back to Dashboard
@@ -70,7 +82,10 @@ const OnlineExamResults = () => {
                             <div className="card shadow-sm border-0 h-100">
                                 <div className="card-body d-flex flex-column justify-content-between">
                                     <h5 className="card-title text-info fw-bold">
-                                        <FaAward className="me-2" />{exam}
+                                        <p><FaBookOpen className="me-2" /><strong>Exam:</strong> {exam.Title}</p>
+                                        <p><FaCalendarAlt className="me-2" /><strong>Exam Date:</strong> {exam.Date || '—'}</p>
+                                        <p><FaCalendarAlt className="me-2" /><strong>Attempted On:</strong> {exam.attemptedOn}</p>
+                                        <p><i className="fas fa-user-graduate me-2 text-secondary"></i><strong>Class:</strong> {exam.AllowedClass || '—'}</p>
                                     </h5>
                                     <button
                                         className="btn btn-primary mt-3"

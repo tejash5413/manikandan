@@ -1,15 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
-
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5RL4Ke5ktuMbzEJ88Hy6U-8VOX514Su9dTxZjOmEME47G3Yc5ZFR30hzCCAHb8wDJsA/exec";
+import { db } from '../../services/firebase';
+import {
+    collection,
+    getDocs,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    doc
+} from 'firebase/firestore';
 
 function ManageCourses() {
     const navigate = useNavigate();
-
     const [courses, setCourses] = useState([]);
     const [formData, setFormData] = useState({
         title: '',
@@ -20,8 +25,37 @@ function ManageCourses() {
         duration: '',
         badge: ''
     });
-    const [editIndex, setEditIndex] = useState(null);
-    const [editingId, setEditingId] = useState(null);
+    const [editId, setEditId] = useState(null);
+
+    const iconOptions = [
+        'fas fa-bullseye',
+        'fas fa-book',
+        'fas fa-bolt',
+        'fas fa-flask',
+        'fas fa-dna',
+        'fas fa-brain',
+        'fas fa-user-graduate',
+        'fas fa-microscope',
+        'fas fa-heartbeat',
+        'fas fa-atom',
+        'fas fa-laptop-medical',
+        'fas fa-vials',
+        'fas fa-virus',
+        'fas fa-lungs',
+        'fas fa-file-medical',
+        'fas fa-stethoscope',
+        'fas fa-syringe',
+        'fas fa-user-md',
+        'fas fa-graduation-cap',
+        'fas fa-school',
+        'fas fa-chalkboard-teacher',
+        'fas fa-pen-nib',
+        'fas fa-award',
+        'fas fa-calendar-alt',
+        'fas fa-clock',
+        'fas fa-trophy'
+    ];
+
 
     useEffect(() => {
         AOS.init({ duration: 1000 });
@@ -30,11 +64,11 @@ function ManageCourses() {
 
     const fetchCourses = async () => {
         try {
-            const res = await fetch(`${GOOGLE_SCRIPT_URL}?type=courses`);
-            const data = await res.json();
+            const snapshot = await getDocs(collection(db, 'courses'));
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setCourses(data);
-        } catch (error) {
-            toast.error("Failed to load courses");
+        } catch (err) {
+            toast.error('Failed to fetch courses');
         }
     };
 
@@ -45,65 +79,37 @@ function ManageCourses() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (!formData.title || !formData.description || !formData.icon || !formData.hostelfee || !formData.dayscholarfee || !formData.duration || !formData.badge) {
-            toast.error("Please fill all fields!");
-            return;
-        }
-
-        const action = editIndex !== null ? "editCourse" : "addCourse";
-        const payload = {
-            action,
-            ...formData,
-            id: editingId // only used for edit
-        };
+        const isEmpty = Object.values(formData).some(field => !field);
+        if (isEmpty) return toast.error("Please fill all fields!");
 
         try {
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            toast.success(editIndex !== null ? "Course updated!" : "Course added!");
-            setFormData({
-                title: '',
-                description: '',
-                icon: '',
-                hostelfee: '',
-                dayscholarfee: '',
-                duration: '',
-                badge: ''
-            }); setEditIndex(null);
-            setEditingId(null);
+            if (editId) {
+                await updateDoc(doc(db, 'courses', editId), formData);
+                toast.success("Course updated!");
+            } else {
+                await addDoc(collection(db, 'courses'), formData);
+                toast.success("Course added!");
+            }
+            setFormData({ title: '', description: '', icon: '', hostelfee: '', dayscholarfee: '', duration: '', badge: '' });
+            setEditId(null);
             fetchCourses();
-        } catch (err) {
+        } catch {
             toast.error("Submission failed");
         }
     };
 
-    const handleEdit = (index) => {
-        setFormData(courses[index]);
-        setEditIndex(index);
-        setEditingId(courses[index].id);
+    const handleEdit = (course) => {
+        setFormData(course);
+        setEditId(course.id);
     };
 
-    const handleDelete = async (index) => {
+    const handleDelete = async (id) => {
         if (!window.confirm("Are you sure to delete this course?")) return;
-
-        const id = courses[index].id;
-
         try {
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'deleteCourse', id })
-            });
+            await deleteDoc(doc(db, 'courses', id));
             toast.info("Course deleted!");
             fetchCourses();
-        } catch (err) {
+        } catch {
             toast.error("Delete failed");
         }
     };
@@ -116,16 +122,13 @@ function ManageCourses() {
                     onClick={() => navigate('/admin-dashboard')}
                 >
                     ← Back to Dashboard
-                </button></div>
+                </button>
+            </div>
             <h2 className="text-center text-primary mb-5" data-aos="fade-down">Manage Courses</h2>
 
-            {/* Course Form */}
             <form className="row g-3 mb-5" onSubmit={handleSubmit} data-aos="fade-up">
-
-                {/* Title */}
                 <div className="col-md-4">
                     <input
-                        type="text"
                         className="form-control"
                         placeholder="Course Title"
                         name="title"
@@ -134,93 +137,85 @@ function ManageCourses() {
                         required
                     />
                 </div>
-
-                {/* Icon */}
                 <div className="col-md-4">
-                    <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Icon Class (e.g., fas fa-bullseye)"
+                    <label className="form-label fw-semibold">
+                        <i className="fas fa-icons me-2 text-primary"></i>Choose Icon
+                    </label>
+                    <select
+                        className="form-select"
                         name="icon"
                         value={formData.icon}
                         onChange={handleChange}
                         required
-                    />
+                    >
+                        <option value="">-- Select Icon --</option>
+                        {iconOptions.map((icon, i) => (
+                            <option key={i} value={icon}>{icon}</option>
+                        ))}
+                    </select>
+                    {formData.icon && (
+                        <div className="mt-2 text-primary">
+                            <i className={`${formData.icon} fs-2 me-2`}></i> Preview
+                        </div>
+                    )}
                 </div>
-
-                {/* Fees - Hostel */}
                 <div className="col-md-4">
                     <input
-                        type="text"
                         className="form-control"
-                        placeholder="Hostel Fee (e.g., ₹80,000)"
+                        placeholder="Hostel Fee"
                         name="hostelfee"
                         value={formData.hostelfee}
                         onChange={handleChange}
                         required
                     />
                 </div>
-
-                {/* Fees - Day Scholar */}
                 <div className="col-md-4">
                     <input
-                        type="text"
                         className="form-control"
-                        placeholder="Day Scholar Fee (e.g., ₹40,000)"
+                        placeholder="Day Scholar Fee"
                         name="dayscholarfee"
                         value={formData.dayscholarfee}
                         onChange={handleChange}
                         required
                     />
                 </div>
-
-                {/* Badge */}
                 <div className="col-md-4">
                     <input
-                        type="text"
                         className="form-control"
-                        placeholder="Badge (e.g., Most Popular)"
+                        placeholder="Badge"
                         name="badge"
                         value={formData.badge}
                         onChange={handleChange}
+                        required
                     />
                 </div>
-                {/* Duration */}
                 <div className="col-md-4">
                     <input
-                        type="text"
                         className="form-control"
-                        placeholder="Duration (e.g., 1 Year, 2 Years)"
+                        placeholder="Duration"
                         name="duration"
                         value={formData.duration}
                         onChange={handleChange}
                         required
                     />
                 </div>
-
-                {/* Description */}
-                <div className="col-md-8">
+                <div className="col-md-12">
                     <input
-                        type="text"
                         className="form-control"
-                        placeholder="Short Description"
+                        placeholder="Description"
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
                         required
                     />
                 </div>
-
-                {/* Submit Button */}
                 <div className="text-center">
                     <button type="submit" className="btn btn-primary mt-3 px-5">
-                        {editIndex !== null ? "Update Course" : "Add Course"}
+                        {editId ? "Update Course" : "Add Course"}
                     </button>
                 </div>
-
             </form>
 
-            {/* Courses List Table */}
             <div className="table-responsive" data-aos="fade-up" data-aos-delay="100">
                 <table className="table table-bordered align-middle text-center">
                     <thead className="table-primary">
@@ -238,12 +233,10 @@ function ManageCourses() {
                     </thead>
                     <tbody>
                         {courses.length === 0 ? (
-                            <tr>
-                                <td colSpan="7">No Courses Available</td>
-                            </tr>
+                            <tr><td colSpan="9">No Courses Available</td></tr>
                         ) : (
                             courses.map((course, index) => (
-                                <tr key={index}>
+                                <tr key={course.id}>
                                     <td>{index + 1}</td>
                                     <td><i className={`${course.icon} fs-4`}></i></td>
                                     <td>{course.title}</td>
@@ -253,8 +246,8 @@ function ManageCourses() {
                                     <td>{course.duration}</td>
                                     <td>{course.description}</td>
                                     <td>
-                                        <button className="btn btn-sm btn-warning me-2" onClick={() => handleEdit(index)}>Edit</button>
-                                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(index)}>Delete</button>
+                                        <button className="btn btn-sm btn-warning me-2" onClick={() => handleEdit(course)}>Edit</button>
+                                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(course.id)}>Delete</button>
                                     </td>
                                 </tr>
                             ))
@@ -262,11 +255,8 @@ function ManageCourses() {
                     </tbody>
                 </table>
             </div>
-
         </div>
     );
 }
 
 export default ManageCourses;
-
-

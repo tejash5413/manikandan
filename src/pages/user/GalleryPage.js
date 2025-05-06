@@ -4,8 +4,8 @@ import 'aos/dist/aos.css';
 import { Atom } from 'react-loading-indicators';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
-
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5RL4Ke5ktuMbzEJ88Hy6U-8VOX514Su9dTxZjOmEME47G3Yc5ZFR30hzCCAHb8wDJsA/exec";
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../services/firebase'; // Adjust if needed
 
 function Gallery() {
     const [gallery, setGallery] = useState([]);
@@ -18,8 +18,8 @@ function Gallery() {
 
     const fetchGallery = async () => {
         try {
-            const res = await fetch(`${GOOGLE_SCRIPT_URL}?type=gallery`);
-            const data = await res.json();
+            const snapshot = await getDocs(collection(db, "gallery"));
+            const data = snapshot.docs.map(doc => doc.data());
             setGallery(data);
         } catch (error) {
             console.error("Failed to load gallery, showing dummy data.");

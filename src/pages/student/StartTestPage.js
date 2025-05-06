@@ -310,7 +310,7 @@ const StartTestPage = () => {
     });
 
     return (
-        <div className="container py-5">
+        <div className="container py-5 mt-4">
             <div className="d-flex justify-content-between align-items-center mb-4 sticky-top bg-white py-2">
                 <div>
                     <button

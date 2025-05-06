@@ -22,8 +22,7 @@ import ExamResults from '../pages/student/ExamResults';
 import Assignments from '../pages/student/Assignments';
 import ProgressCard from '../pages/student/ProgressCard';
 import ExaminationsPage from '../pages/student/ExaminationsPage';
-import StartTestPage from '../pages/student/StartTestPage'; // Make sure this path is correct
-import ExamResultPage from '../pages/student/ExamResultPage';
+import StartTestPage from '../pages/student/StartTestPage';
 import OnlineExamResults from '../pages/student/OnlineExamResults';
 
 // Admin Pages
@@ -41,6 +40,9 @@ import CreateExamForm from '../pages/admin/CreateExamForm';
 import CreateStudent from '../pages/admin/CreateStudent';
 import ExamSelectionPage from '../pages/admin/ExamSelectionPage';
 import StudentsList from '../pages/admin/StudentsList';
+import ManageApplicationsAndContactPage from '../pages/admin/ManageApplicationsAndContactPage';
+import ContactSubmissionsPage from '../pages/admin/ContactSubmissionsPage';
+
 function AppRoutes() {
     return (
         <Routes>
@@ -171,6 +173,16 @@ function AppRoutes() {
             <Route path="/admin-dashboard/students" element={
                 <AdminPrivateRoute>
                     <StudentsList />
+                </AdminPrivateRoute>
+            } />
+            <Route path="/admin-dashboard/manage-center" element={
+                <AdminPrivateRoute>
+                    <ManageApplicationsAndContactPage />
+                </AdminPrivateRoute>
+            } />
+            <Route path="/admin-dashboard/contact-submissions" element={
+                <AdminPrivateRoute>
+                    <ContactSubmissionsPage />
                 </AdminPrivateRoute>
             } />
         </Routes>

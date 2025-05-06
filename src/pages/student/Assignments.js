@@ -2,14 +2,17 @@ import React, { useEffect, useState } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { Spinner, Badge, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { FaExternalLinkAlt, FaBookOpen } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5RL4Ke5ktuMbzEJ88Hy6U-8VOX514Su9dTxZjOmEME47G3Yc5ZFR30hzCCAHb8wDJsA/exec";
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { updateDoc, doc } from 'firebase/firestore';
+import { toast } from 'react-toastify';
+// Icons
+import { FaExternalLinkAlt, FaBookOpen, FaCalendarAlt, FaClipboardList, FaCheckCircle, FaClock } from 'react-icons/fa';
+import { BsPatchCheckFill } from 'react-icons/bs';
 
 function Assignments() {
     const navigate = useNavigate();
-
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -20,40 +23,11 @@ function Assignments() {
 
     const fetchAssignments = async () => {
         try {
-            const res = await fetch(`${GOOGLE_SCRIPT_URL}?type=assignments`);
-            const data = await res.json();
+            const querySnapshot = await getDocs(collection(db, 'assignments'));
+            const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setAssignments(data);
         } catch (err) {
             console.error("Failed to load assignments:", err);
-            setAssignments([
-                {
-                    "subject/exam": "Biology",
-                    title: "Cell Structure Quiz",
-                    duedate: "2025-05-05",
-                    description: "Complete all MCQs from Chapter 5",
-                    link: "https://example.com/biology-quiz",
-                    postedon: "2025-04-30",
-                    status: "Pending"
-                },
-                {
-                    "subject/exam": "Physics",
-                    title: "Numerical Worksheet",
-                    duedate: "2025-05-06",
-                    description: "Solve numerical questions from Chapter 3",
-                    link: "",
-                    postedon: "2025-04-30",
-                    status: "Pending"
-                },
-                {
-                    "subject/exam": "Chemistry",
-                    title: "Organic Mechanisms",
-                    duedate: "2025-05-07",
-                    description: "Write notes for key reactions",
-                    link: "https://example.com/organic-mech",
-                    postedon: "2025-04-30",
-                    status: "Completed"
-                }
-            ]);
         } finally {
             setLoading(false);
         }
@@ -61,72 +35,82 @@ function Assignments() {
 
     const getStatusBadge = (status) => {
         return (
-            <Badge pill bg={status.toLowerCase() === 'completed' ? 'success' : 'danger'}>
+            <Badge pill bg={status?.toLowerCase() === 'completed' ? 'success' : 'warning'} className="px-3 py-2 text-uppercase">
                 {status}
             </Badge>
         );
     };
-    function formatDate(inputDate) {
+
+    const formatDate = (inputDate) => {
         if (!inputDate) return '';
-
         const dateObj = new Date(inputDate);
+        if (isNaN(dateObj)) return inputDate;
+        return `${String(dateObj.getDate()).padStart(2, '0')}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${dateObj.getFullYear()}`;
+    };
+    const handleStatusChange = async (id, newStatus) => {
+        try {
+            const assignmentRef = doc(db, 'assignments', id);
+            await updateDoc(assignmentRef, { status: newStatus });
 
-        if (isNaN(dateObj)) {
-            return inputDate; // If already text like 29-04-2025
+            setAssignments(prev =>
+                prev.map(item =>
+                    item.id === id ? { ...item, status: newStatus } : item
+                )
+            );
+
+            toast.success(`Status updated to ${newStatus}`);
+        } catch (err) {
+            toast.error("Failed to update status");
+            console.error(err);
         }
-
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const year = dateObj.getFullYear();
-
-        return `${day}-${month}-${year}`;
-    }
+    };
     return (
-        <div className="container py-5">
-            <button
-                className="btn btn-outline-danger"
-                onClick={() => navigate('/student-dashboard')}
-            >
-                ← Back to Dashboard
-            </button>
-            <h2 className="text-center text-primary mb-5" data-aos="fade-up">📘 Student Assignments</h2>
+        <div className="container py-5 mt-5">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2 className="text-primary fw-bold" data-aos="fade-right">
+                    <FaClipboardList className="me-2" />
+                    Student Assignments
+                </h2>
+                <button className="btn btn-outline-danger" onClick={() => navigate('/student-dashboard')}>
+                    ← Back
+                </button>
+            </div>
 
             {loading ? (
-                <div className="text-center">
+                <div className="text-center my-5">
                     <Spinner animation="border" variant="primary" />
+                    <p className="mt-3">Loading assignments...</p>
                 </div>
             ) : assignments.length === 0 ? (
-                <p className="text-center ">No assignments available.</p>
+                <p className="text-center fs-5 text-muted">No assignments available.</p>
             ) : (
-                <div className="table-responsive" >
-                    <table className="table table-hover align-middle text-center shadow-sm">
+                <div className="table-responsive">
+                    <table className="table table-bordered table-hover shadow-sm align-middle text-center rounded-4 overflow-hidden">
                         <thead className="table-primary">
                             <tr>
-                                <th className="fw-semibold fs-5 ">#</th>
-                                <th className="fw-semibold fs-5 ">📖 Subject / Exam</th>
-                                <th className="fw-semibold fs-5 ">📝 Title</th>
-                                <th className="fw-semibold fs-5 ">📅 Due Date</th>
-                                <th className="fw-semibold fs-5 ">🧾 Description</th>
-                                <th className="fw-semibold fs-5 ">🔗 Link</th>
-                                <th className="fw-semibold fs-5 ">🕒 Posted On</th>
-                                <th className="fw-semibold fs-5 ">📌 Status</th>
+                                <th>#</th>
+                                <th><FaBookOpen className="me-1" /> Subject</th>
+                                <th><FaClipboardList className="me-1" /> Title</th>
+                                <th><FaCalendarAlt className="me-1" /> Due Date</th>
+                                <th><FaClock className="me-1" /> Posted On</th>
+                                <th><i className="bi bi-info-circle me-1" /> Description</th>
+                                <th><i className="bi bi-link-45deg me-1" /> Link</th>
+                                <th><BsPatchCheckFill className="me-1" /> Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {assignments.map((item, index) => (
-                                <tr key={index} className={item.status.toLowerCase() === 'completed' ? 'table-success' : 'table-danger'}>
-                                    <td className="fw-semibold fs-5">{index + 1}</td>
-                                    <td className="fw-semibold text-start fs-5">
-                                        <FaBookOpen className="me-2 text-secondary" />
-                                        <span className="fw-medium">{item['subjectexam']}</span>
-                                    </td>
-                                    <td className="fw-semibold fs-5 ">{item.title}</td>
-                                    <td className="fw-semibold fs-5 ">{formatDate(item.duedate)}</td>
-                                    <td className=" fw-semibold text-start fs-5">{item.description}</td>
-                                    <td className=" fw-semibold fs-5">
+                                <tr key={item.id} className="align-middle">
+                                    <td className="fw-bold">{index + 1}</td>
+                                    <td className="fw-bold">{item.subject}</td>
+                                    <td className="fw-medium">{item.title}</td>
+                                    <td>{formatDate(item.duedate)}</td>
+                                    <td>{formatDate(item.postedon)}</td>
+                                    <td className="text-start">{item.description}</td>
+                                    <td>
                                         {item.link ? (
                                             <OverlayTrigger placement="top" overlay={<Tooltip>Open Link</Tooltip>}>
-                                                <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                                                <a href={item.link} target="_blank" rel="noopener noreferrer">
                                                     <FaExternalLinkAlt className="text-primary fs-5" />
                                                 </a>
                                             </OverlayTrigger>
@@ -134,12 +118,19 @@ function Assignments() {
                                             <span className="text-muted">—</span>
                                         )}
                                     </td>
-                                    <td className="fw-semibold fs-5">{formatDate(item.postedon)}</td>
-                                    <td className="fw-semibold fs-5">{getStatusBadge(item.status)}</td>
-                                </tr>
+                                    <td>
+                                        <select
+                                            className={`form-select text-uppercase fw-bold ${item.status.toLowerCase() === 'completed' ? 'bg-success text-white' : 'bg-warning text-dark'}`}
+                                            value={item.status}
+                                            onChange={(e) => handleStatusChange(item.id, e.target.value)}
+                                            style={{ minWidth: '120px' }}
+                                        >
+                                            <option value="Pending">Pending</option>
+                                            <option value="Completed">Completed</option>
+                                        </select>
+                                    </td>                                </tr>
                             ))}
                         </tbody>
-
                     </table>
                 </div>
             )}

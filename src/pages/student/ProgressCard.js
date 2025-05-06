@@ -239,7 +239,7 @@ function ProgressCard() {
     };
 
     return (
-        <div className="container py-5">
+        <div className="container py-5 mt-5">
             <h2 className="text-center  mb-4">
                 <FaUserGraduate className="me-2 mb-1" /> Student Progress Card
             </h2>

@@ -64,7 +64,7 @@ const CreateStudent = () => {
                             <h3 className="text-primary fw-bold">
                                 <i className="fas fa-user-plus me-2"></i>Create Student Login
                             </h3>
-                            <p className="text-muted">Generate login credentials for a new student</p>
+                            <p >Generate login credentials for a new student</p>
                         </div>
 
                         <form onSubmit={handleCreate}>
@@ -81,7 +81,7 @@ const CreateStudent = () => {
                             <div className="form-floating mb-3">
                                 <input type="text" className="form-control" id="password" name="password" value={form.password} onChange={handleChange} />
                                 <label htmlFor="password"><i className="fas fa-lock me-2"></i>Password</label>
-                                <small className="text-muted mt-1 d-block">Default: Student@123</small>
+                                <small className="mt-1 d-block">Default: Student@123</small>
                             </div>
 
                             <div className="form-floating mb-3">

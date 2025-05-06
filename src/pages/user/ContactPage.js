@@ -5,10 +5,10 @@ import { toast } from 'react-toastify';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import Lottie from 'lottie-react';
-import contactAnimation from './contact.json'; // Ensure you place the Lottie JSON here
+import contactAnimation from './contact.json';
 import '../../index.css';
-
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_WEB_APP_ID/exec'; // Replace with real URL
+import { addDoc, collection } from "firebase/firestore";
+import { db } from "../../services/firebase"; // Firebase config
 
 function Contact() {
     useEffect(() => {
@@ -30,35 +30,52 @@ function Contact() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            toast.success('📬 Message submitted successfully!');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        const { name, email, message } = formData;
 
+        if (!name || !email || !message) {
+            toast.error("Please fill all fields");
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, "contact_submissions"), {
+                name,
+                email,
+                message,
+                submittedAt: new Date().toISOString()
+            });
+
+            toast.success('📬 Message submitted successfully!');
             setFormData({ name: '', email: '', message: '' });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // WhatsApp message
+            const whatsappText = `Hello, this is ${name}%0AEmail: ${email}%0AMessage: ${message}`;
+            const whatsappURL = `https://wa.me/91966641160?text=${whatsappText}`;
+
+            setTimeout(() => {
+                window.open(whatsappURL, "_blank");
+            }, 800);
+
         } catch (err) {
+            console.error("Firestore Error:", err);
             toast.error('❌ Submission failed');
         }
     };
 
     return (
-        <div className="contact-section position-relative" >
+        <div className="contact-section position-relative">
             <div className="container py-5">
-                <h2 className="text-center  fw-bold mb-5" data-aos="fade-down">
+                <h2 className="text-center fw-bold mb-5" data-aos="fade-down">
                     <i className="fas fa-handshake-angle me-2"></i>Connect with Manikandan Academy
                 </h2>
 
                 <div className="row g-4 align-items-stretch">
+                    {/* Left Column */}
                     <div className="col-md-5" data-aos="fade-right">
-                        <div className="card border-0  h-100  rounded-4">
+                        <div className="card border-0 h-100 rounded-4">
                             <div className="card-body p-4">
                                 <h5 className="text-success fw-bold mb-4">
-                                    <i className="fas fa-handshake  me-2"></i> Reach Us
+                                    <i className="fas fa-handshake me-2"></i> Reach Us
                                 </h5>
 
                                 <div className="mb-3 d-flex align-items-start">
@@ -77,7 +94,7 @@ function Contact() {
                                     </div>
                                     <div>
                                         <h6 className="mb-0">Phone</h6>
-                                        <small >+91 7397746644/7397746633</small>
+                                        <small>+91 7397746644 / 7397746633</small>
                                     </div>
                                 </div>
 
@@ -87,8 +104,7 @@ function Contact() {
                                     </div>
                                     <div>
                                         <h6 className="mb-0">Email</h6>
-                                        <small >manikandanneetacademy@gmail.com
-                                        </small>
+                                        <small>manikandanneetacademy@gmail.com</small>
                                     </div>
                                 </div>
 
@@ -98,22 +114,20 @@ function Contact() {
                                     </div>
                                     <div>
                                         <h6 className="mb-0">Working Hours</h6>
-                                        <small >Mon - Sat: 9:00 AM - 8:00 PM</small>
+                                        <small>Mon - Sat: 9:00 AM - 8:00 PM</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                     </div>
 
+                    {/* Right Column */}
                     <div className="col-md-7" data-aos="fade-left">
-                        <div className="card border-0   h-100 rounded-4">
+                        <div className="card border-0 h-100 rounded-4">
                             <div className="card-body p-4">
                                 <div className="row">
                                     <div className="col-lg-5 text-center" data-aos="fade-in">
-                                        <div className="p-3">
-                                            <Lottie animationData={contactAnimation} loop={true} style={{ maxWidth: '100%', height: '300px' }} />
-                                        </div>
+                                        <Lottie animationData={contactAnimation} loop={true} style={{ maxWidth: '100%', height: '300px' }} />
                                     </div>
                                     <div className="col-md-6">
                                         <form onSubmit={handleSubmit}>
@@ -140,6 +154,7 @@ function Contact() {
                     </div>
                 </div>
 
+                {/* Google Map */}
                 <div className="mt-5 rounded-4 overflow-hidden shadow" data-aos="zoom-in">
                     <iframe
                         title="Manikandan NEET Academy Location"
