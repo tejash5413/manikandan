@@ -3,7 +3,7 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { Atom } from 'react-loading-indicators';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../services/firebase'; // Adjust if needed
+import { adminDb as db } from '../../services/firebase';
 
 function FacultyPage() {
     const [faculty, setFaculty] = useState([]);

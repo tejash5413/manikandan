@@ -6,10 +6,10 @@ import { FaUserGraduate, FaIdBadge, FaSchool, FaCalendarCheck, FaFlask, FaAtom, 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { getAuth } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { studentDb as db } from "../../services/firebase"; // 🔐 correct Firestore instance for students
 import { toast } from 'react-toastify';
-
 function ProgressCard() {
     const navigate = useNavigate();
 
@@ -32,22 +32,33 @@ function ProgressCard() {
         }
     }, []);
 
-    const fetchResults = async (rollno) => {
+    const fetchResults = async () => {
         try {
-            // 🔹 First: Get student details from Firestore
-            const q = query(collection(db, "students"), where("rollno", "==", rollno));
-            const snapshot = await getDocs(q);
+            const auth = getAuth();
+            const uid = auth.currentUser?.uid;
 
-            if (!snapshot.empty) {
-                const student = snapshot.docs[0].data();
-                setName(student.name || '');
-                setStudentClass(student.class || '');
-                setBatch(student.batch || '');
-            } else {
-                console.warn("Student not found in Firestore");
+            if (!uid) {
+                toast.error("User not logged in.");
+                return;
             }
 
-            // 🔹 Then: Fetch performance results from Google Sheets
+            // 🔹 Step 1: Get student details from Firestore
+            const studentRef = doc(db, "students", uid);
+            const snapshot = await getDoc(studentRef);
+
+            if (!snapshot.exists()) {
+                toast.error("Student profile not found.");
+                return;
+            }
+
+            const student = snapshot.data();
+            const rollno = student.rollno;
+
+            setName(student.name || '');
+            setStudentClass(student.class || '');
+            setBatch(student.batch || '');
+
+            // 🔹 Step 2: Fetch performance results from Google Sheets
             const response = await fetch("https://script.google.com/macros/s/AKfycbx5RL4Ke5ktuMbzEJ88Hy6U-8VOX514Su9dTxZjOmEME47G3Yc5ZFR30hzCCAHb8wDJsA/exec?type=results");
             const data = await response.json();
 
@@ -62,7 +73,7 @@ function ProgressCard() {
             setTestCounts({ daily, weekend, grand });
             setResults(filtered);
 
-            // Rank trend logic
+            // 🔹 Step 3: Rank trend logic
             const sortedByDate = [...filtered].sort((a, b) =>
                 new Date(a.date || a.Date) - new Date(b.date || b.Date)
             );
@@ -83,6 +94,7 @@ function ProgressCard() {
             setLoading(false);
         }
     };
+
 
     const filteredResults = results.filter(t => filterType === 'All' || (t.testtype || t.TestType) === filterType);
 
@@ -239,7 +251,7 @@ function ProgressCard() {
     };
 
     return (
-        <div className="container py-5 mt-5">
+        <div className="container py-5 mt-5 ">
             <h2 className="text-center  mb-4">
                 <FaUserGraduate className="me-2 mb-1" /> Student Progress Card
             </h2>

@@ -4,7 +4,7 @@ import "aos/dist/aos.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../services/firebase";
+import { studentDb as db } from "../../services/firebase"; // ✅ use student context
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Latex from "react-latex-next";

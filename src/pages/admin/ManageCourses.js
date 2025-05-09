@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { toast } from 'react-toastify';
-import { db } from '../../services/firebase';
+import { adminDb as db } from '../../services/firebase';
 import {
     collection,
     getDocs,

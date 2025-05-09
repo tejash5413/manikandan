@@ -5,7 +5,7 @@ import Lottie from 'lottie-react';
 import loginAnimation from '../../assets/studentLoginAnimation.json';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../../services/firebase';
+import { studentAuth as auth, studentDb as db } from '../../services/firebase'; // ✅ student app instance
 import 'aos/dist/aos.css';
 
 function StudentLogin() {

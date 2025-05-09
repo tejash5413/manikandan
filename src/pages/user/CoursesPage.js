@@ -5,7 +5,7 @@ import 'aos/dist/aos.css';
 import './CoursesPage.css';
 import { Atom } from 'react-loading-indicators';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../services/firebase'; // adjust path if needed
+import { adminDb as db } from '../../services/firebase';
 
 function CoursesPage() {
     const [courses, setCourses] = useState([]);
@@ -59,7 +59,7 @@ function CoursesPage() {
                                 <div className="card-body text-center p-4">
                                     <i className={`${course.icon} fa-5x text-success mb-3`}></i>
                                     <h3 className="card-title fw-bold">{course.title}</h3>
-                                    <p className="card-text text-secondary fs-6">{course.description}</p>
+                                    <p className="card-text  fs-6">{course.description}</p>
                                     <hr />
                                     <div className="fees-duration d-flex justify-content-between mt-3 fs-5">
                                         <span className="text-primary"><i className="bi bi-clock"></i> {course.duration}</span>

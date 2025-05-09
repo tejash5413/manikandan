@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, addDoc, collection } from "firebase/firestore";
-import { db } from "../../services/firebase";
+import { studentDb as db } from "../../services/firebase"; // ✅ student context
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import Latex from "react-latex-next";

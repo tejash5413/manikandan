@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { useNavigate } from 'react-router-dom';
-import { db, storage } from '../../services/firebase';
+import { adminDb as db, adminStorage as storage } from '../../services/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 

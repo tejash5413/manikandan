@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { collection, getDocs, doc, updateDoc, query, where, deleteDoc } from 'firebase/firestore';
+import { adminDb as db } from '../../services/firebase'; // ✅ Use admin Firestore
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { deleteDoc } from 'firebase/firestore';
 
 const ExamSelectionPage = () => {
     const [exams, setExams] = useState([]);
@@ -45,18 +44,28 @@ const ExamSelectionPage = () => {
         }
     };
     const handleDeleteExam = async (examId, title) => {
-        if (!window.confirm(`Are you sure you want to delete the exam "${title}"? This cannot be undone.`)) return;
+        if (!window.confirm(`Are you sure you want to delete the exam "${title}"? This will also delete related results.`)) return;
 
         try {
+            // 1. Delete the exam document
             await deleteDoc(doc(db, 'exams', examId));
 
-            // Remove from local state
+            // 2. Find and delete all results with that examTitle
+            const resultQuery = query(collection(db, 'results'), where('examTitle', '==', title));
+            const resultSnapshot = await getDocs(resultQuery);
+
+            const deletePromises = resultSnapshot.docs.map(resultDoc =>
+                deleteDoc(doc(db, 'results', resultDoc.id))
+            );
+            await Promise.all(deletePromises);
+
+            // 3. Remove exam from local state
             setExams(prev => prev.filter(e => e.id !== examId));
 
-            toast.success(`🗑️ Exam "${title}" deleted successfully.`);
+            toast.success(`🗑️ Exam "${title}" and related results deleted successfully.`);
         } catch (error) {
             console.error("Delete error:", error);
-            toast.error("❌ Failed to delete exam.");
+            toast.error("❌ Failed to delete exam and/or results.");
         }
     };
     return (

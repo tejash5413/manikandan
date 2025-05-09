@@ -1,20 +1,35 @@
 import React, { useState, useEffect } from "react";
-import { getAuth } from "firebase/auth";
-import { addDoc, collection, getDocs, doc, updateDoc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db } from "../../services/firebase";
-import { useLocation } from "react-router-dom";
-import { useNavigate } from 'react-router-dom';
+import {
+    addDoc,
+    collection,
+    getDocs,
+    doc,
+    updateDoc
+} from "firebase/firestore";
+import {
+    ref,
+    uploadBytes,
+    getDownloadURL
+} from "firebase/storage";
+
+import {
+    adminDb as db,
+    adminStorage as storage
+} from "../../services/firebase"; // ✅ Import admin instances here
+
+import { useLocation, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
+
 import LiveLatexInput from './LiveLatexInput';
 import Latex from 'react-latex-next';
 import 'katex/dist/katex.min.css';
+
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import * as XLSX from 'xlsx';
 import Select from 'react-select';
-const auth = getAuth();
+
 
 const CreateExamForm = () => {
     const navigate = useNavigate();
@@ -245,7 +260,6 @@ const CreateExamForm = () => {
         if (imageURL.startsWith("blob:")) {
             try {
                 const blob = await fetch(imageURL).then((r) => r.blob());
-                const storage = getStorage();
                 const storageRef = ref(storage, `questions/${Date.now()}.png`);
                 await uploadBytes(storageRef, blob);
                 imageURL = await getDownloadURL(storageRef);

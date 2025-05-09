@@ -2,18 +2,19 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../services/firebase";
+import { studentDb as db } from "../../services/firebase"; // 🔐 correct Firestore instance for students
 import { toast } from "react-toastify";
 import {
     FaAward, FaArrowLeft, FaArrowRight, FaUser, FaBookOpen,
     FaCalendarAlt, FaCheckCircle, FaTimesCircle, FaBullseye,
-    FaChartLine, FaTrophy, FaListOl, FaChartPie, FaTag, FaFilter
+    FaChartLine, FaTrophy, FaListOl, FaChartPie, FaTag, FaFilter, FaClock
 } from "react-icons/fa";
 
 const OnlineExamResults = () => {
     const { title } = useParams();
     const navigate = useNavigate();
     const rollno = localStorage.getItem("studentRollno");
+    const [examMetadata, setExamMetadata] = useState([]);
 
     const [result, setResult] = useState(null);
     const [allResults, setAllResults] = useState([]);
@@ -25,23 +26,33 @@ const OnlineExamResults = () => {
     useEffect(() => {
         const fetchAllResults = async () => {
             try {
-                const studentClass = localStorage.getItem("studentClass"); // 👈 fetch class from localStorage
-                const snapshot = await getDocs(collection(db, "results"));
-                const resultsData = snapshot.docs.map(doc => doc.data());
+                const studentClass = localStorage.getItem("studentClass");
 
-                // ✅ Filter results where allowedClass is not set or includes studentClass
-                const classFilteredResults = resultsData.filter(r => {
-                    if (!r.allowedClass || r.allowedClass.length === 0) return true;
-                    return r.allowedClass.includes(studentClass);
+                // Fetch all exams
+                const examsSnapshot = await getDocs(collection(db, "exams"));
+                const exams = examsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setExamMetadata(exams);
+
+                const validExamTitles = exams.map(e => e.Title?.trim());
+
+                // Fetch all results
+                const resultsSnapshot = await getDocs(collection(db, "results"));
+                const allResultsRaw = resultsSnapshot.docs.map(doc => doc.data());
+
+                // Filter results: valid class + exam still exists
+                const classFilteredResults = allResultsRaw.filter(r => {
+                    const validClass = !r.allowedClass || r.allowedClass.includes(studentClass);
+                    const examExists = validExamTitles.includes(r.examTitle?.trim());
+                    return validClass && examExists;
                 });
 
                 setAllResults(classFilteredResults);
+                setAvailableExams([...new Set(classFilteredResults.map(r => r.examTitle))]);
 
-                // Unique exams available
-                const examTitles = [...new Set(classFilteredResults.map(r => r.examTitle))];
-                setAvailableExams(examTitles);
-
-                // If title param is passed, find this exam result for current student
+                // Load student result if title param is present
                 if (title) {
                     const filtered = classFilteredResults.filter(r =>
                         r.examTitle?.trim().toLowerCase() === decodeURIComponent(title).trim().toLowerCase()
@@ -50,9 +61,10 @@ const OnlineExamResults = () => {
                     setResult(studentResult);
                     if (!studentResult) toast.error("❌ Your result not found.");
                 }
+
             } catch (error) {
-                console.error("Error fetching result:", error);
-                toast.error("❌ Failed to load result.");
+                toast.error("❌ Failed to load results.");
+                console.error(error);
             } finally {
                 setLoading(false);
             }
@@ -61,6 +73,14 @@ const OnlineExamResults = () => {
         fetchAllResults();
     }, [title, rollno]);
 
+    const isValidAttempted = (value) => {
+        return value &&
+            typeof value === 'string' &&
+            value.trim() !== '' &&
+            value.trim().toLowerCase() !== 'undefined' &&
+            value.trim().toLowerCase() !== 'null' &&
+            !isNaN(new Date(value).getTime()); // ✅ valid date
+    };
 
     if (loading) return (
         <div className="text-center mt-5">
@@ -77,26 +97,72 @@ const OnlineExamResults = () => {
                     <FaArrowLeft className="me-2" />Back to Dashboard
                 </button>
                 <div className="row">
-                    {availableExams.map((exam, idx) => (
-                        <div className="col-md-4 mb-3" key={idx}>
-                            <div className="card shadow-sm border-0 h-100">
-                                <div className="card-body d-flex flex-column justify-content-between">
-                                    <h5 className="card-title text-info fw-bold">
-                                        <p><FaBookOpen className="me-2" /><strong>Exam:</strong> {exam.Title}</p>
-                                        <p><FaCalendarAlt className="me-2" /><strong>Exam Date:</strong> {exam.Date || '—'}</p>
-                                        <p><FaCalendarAlt className="me-2" /><strong>Attempted On:</strong> {exam.attemptedOn}</p>
-                                        <p><i className="fas fa-user-graduate me-2 text-secondary"></i><strong>Class:</strong> {exam.AllowedClass || '—'}</p>
-                                    </h5>
-                                    <button
-                                        className="btn btn-primary mt-3"
-                                        onClick={() => navigate(`/student-dashboard/online-exam-results/${encodeURIComponent(exam)}`)}
-                                    >
-                                        View Result
-                                    </button>
+                    <div className="row">
+                        {availableExams.map((examTitle, idx) => {
+                            const result = allResults.find(r => r.examTitle === examTitle) || {};
+                            const meta = examMetadata.find(e => e.Title === examTitle) || {};
+
+                            const allowed = Array.isArray(meta.AllowedClass)
+                                ? meta.AllowedClass.map(c => c.trim().toLowerCase())
+                                : [meta.AllowedClass?.trim().toLowerCase()];
+
+                            const studentClass = localStorage.getItem('studentClass')?.trim().toLowerCase();
+
+                            const isClassAllowed = allowed.includes(studentClass);
+
+                            // ✅ Only render if class matches
+                            if (!isClassAllowed) return null;
+
+                            return (
+                                <div className="col-md-4 mb-3" key={idx}>
+                                    <div className="card shadow-sm border-0 h-100">
+                                        <div className="card-body d-flex flex-column justify-content-between">
+                                            <h5 className="card-title fw-bold">
+                                                <p><FaBookOpen className="me-2" /><strong>Exam:</strong> {examTitle}</p>
+
+                                                {meta.Date && (
+                                                    <p><FaCalendarAlt className="me-2" /><strong>Exam Date:</strong> {meta.Date}</p>
+                                                )}
+
+                                                {meta.Time && (
+                                                    <p><FaClock className="me-2" /><strong>Time:</strong> {meta.Time}</p>
+                                                )}
+
+                                                {isValidAttempted(result.attemptedOn) ? (
+                                                    <p><FaCalendarAlt className="me-2" /><strong>Attempted On:</strong> {result.attemptedOn}</p>
+                                                ) : (
+                                                    <p className="text-danger"><i className="fas fa-exclamation-circle me-2"></i><strong>Not Attempted</strong></p>
+                                                )}
+
+                                                {meta.AllowedClass && (
+                                                    <p>
+                                                        <i className="fas fa-user-graduate me-2 text-secondary"></i>
+                                                        <strong>Class:</strong>{' '}
+                                                        {Array.isArray(meta.AllowedClass)
+                                                            ? meta.AllowedClass.join(', ')
+                                                            : meta.AllowedClass}
+                                                    </p>
+                                                )}
+                                            </h5>
+
+                                            <button
+                                                className={`btn mt-3 ${isValidAttempted(result.attemptedOn) ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                                onClick={() =>
+                                                    isValidAttempted(result.attemptedOn) &&
+                                                    navigate(`/student-dashboard/online-exam-results/${encodeURIComponent(examTitle)}`)
+                                                }
+                                                disabled={!isValidAttempted(result.attemptedOn)}
+                                            >
+                                                {isValidAttempted(result.attemptedOn) ? 'View Result' : 'Not Attempted'}
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    ))}
+                            );
+                        })}
+
+                    </div>
+
                 </div>
             </div>
         );

@@ -33,13 +33,11 @@ import ManageApplications from '../pages/admin/ManageApplications';
 import ManageGallery from '../pages/admin/ManageGallery';
 import ManageFaculty from '../pages/admin/ManageFaculty';
 import UploadResults from '../pages/admin/UploadResults';
-import ViewTopperBoard from '../pages/admin/ViewTopperBoard';
-import SiteSettings from '../pages/admin/SiteSettings';
 import ManageAssignments from '../pages/admin/ManageAssignments';
 import CreateExamForm from '../pages/admin/CreateExamForm';
 import CreateStudent from '../pages/admin/CreateStudent';
 import ExamSelectionPage from '../pages/admin/ExamSelectionPage';
-import StudentsList from '../pages/admin/StudentsList';
+import StudentsList from '../pages/admin/StudentsList'; // ✅ should be default import
 import ManageApplicationsAndContactPage from '../pages/admin/ManageApplicationsAndContactPage';
 import ContactSubmissionsPage from '../pages/admin/ContactSubmissionsPage';
 
@@ -145,16 +143,8 @@ function AppRoutes() {
                     <UploadResults />
                 </AdminPrivateRoute>
             } />
-            <Route path="/admin-dashboard/view-topper-board" element={
-                <AdminPrivateRoute>
-                    <ViewTopperBoard />
-                </AdminPrivateRoute>
-            } />
-            <Route path="/admin-dashboard/site-settings" element={
-                <AdminPrivateRoute>
-                    <SiteSettings />
-                </AdminPrivateRoute>
-            } />
+
+
             <Route path="/admin-dashboard/create-exams" element={
                 <AdminPrivateRoute>
                     <CreateExamForm />

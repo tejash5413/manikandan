@@ -6,7 +6,7 @@ import Lottie from 'lottie-react';
 import animationData from '../../assets/apply.json';
 import successAnimation from '../../assets/success.json';
 import './ApplyPage.css';
-import { db } from '../../services/firebase';
+import { adminDb as db } from '../../services/firebase';
 import { collection, getDocs, addDoc } from 'firebase/firestore';
 
 function ApplyPage() {

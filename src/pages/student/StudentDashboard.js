@@ -7,49 +7,65 @@ import {
     FaUserGraduate, FaIdCard, FaChalkboardTeacher, FaCalendarAlt,
     FaSignOutAlt, FaTasks, FaChartLine, FaRegFileAlt, FaClipboardCheck
 } from 'react-icons/fa';
-import { getAuth } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { getDoc, doc, onSnapshot } from 'firebase/firestore';
+import { studentDb as db } from '../../services/firebase'; // ✅ Student context
+import { studentAuth as auth } from '../../services/firebase'; // ✅ CORRECT
 
 function StudentDashboard() {
     const navigate = useNavigate();
-    const [student, setStudent] = useState({ name: '', rollno: '', class: '', batch: '' });
+    const [student, setStudent] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         AOS.init({ duration: 1000 });
 
-        const auth = getAuth();
-        const user = auth.currentUser;
+        let unsubDoc = () => { }; // fallback no-op
 
-        if (user) {
-            const studentRef = doc(db, 'students', user.uid);
-            const unsubscribe = onSnapshot(studentRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setStudent({
-                        name: data.name || '',
-                        rollno: data.rollno || '',
-                        class: data.class || '',
-                        batch: data.batch || ''
-                    });
-                    localStorage.setItem('studentRollno', data.rollno);
-                    localStorage.setItem('studentClass', data.class);
-                }
-            });
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                const studentRef = doc(db, 'students', user.uid);
+                unsubDoc = onSnapshot(studentRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        setStudent({
+                            name: data.name || '',
+                            rollno: data.rollno || '',
+                            class: data.class || '',
+                            batch: data.batch || ''
+                        });
+                        localStorage.setItem('studentRollno', data.rollno);
+                        localStorage.setItem('studentClass', data.class);
+                        setLoading(false);
+                    } else {
+                        toast.error("❌ Student profile not found.");
+                        navigate('/student-login');
+                    }
+                });
+            } else {
+                toast.error("⚠️ Please log in again.");
+                navigate('/student-login');
+            }
+        });
 
-            return () => unsubscribe();
-        } else {
-            toast.error("Please log in again.");
-            navigate('/student-login');
-        }
+        return () => {
+            unsubscribe(); // auth listener
+            unsubDoc();    // Firestore listener
+        };
     }, [navigate]);
 
-    const handleLogout = () => {
-        toast.info("Logged Out Successfully!");
+
+    const handleLogout = async () => {
+        await signOut(auth);
+        toast.info("👋 Logged Out Successfully!");
         localStorage.removeItem('studentRollno');
         localStorage.removeItem('studentClass');
         setTimeout(() => navigate('/student-login'), 1000);
     };
+
+    if (loading || !student) {
+        return <div className="text-center mt-5 fw-bold">Loading your dashboard...</div>;
+    }
 
     return (
         <div className="container py-5 mt-5">
@@ -78,7 +94,11 @@ function StudentDashboard() {
                     { icon: <FaSignOutAlt className="display-6 text-danger mb-2" />, label: 'Logout', onClick: handleLogout }
                 ].map((btn, i) => (
                     <div className="col-md-4 col-6" key={i}>
-                        <div className="card border shadow h-100" onClick={() => btn.path ? navigate(btn.path) : btn.onClick()} role="button">
+                        <div
+                            className="card border shadow h-100"
+                            onClick={() => btn.path ? navigate(btn.path) : btn.onClick()}
+                            role="button"
+                        >
                             <div className="card-body">
                                 {btn.icon}
                                 <h6 className="fw-bold">{btn.label}</h6>

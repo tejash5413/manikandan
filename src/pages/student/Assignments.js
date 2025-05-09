@@ -1,21 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { Spinner, Badge, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Spinner, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../services/firebase';
-import { updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
+import { studentDb as db, studentAuth as auth } from '../../services/firebase'; // ✅ use student context
 import { toast } from 'react-toastify';
-// Icons
-import { FaExternalLinkAlt, FaBookOpen, FaCalendarAlt, FaClipboardList, FaCheckCircle, FaClock } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaBookOpen, FaCalendarAlt, FaClipboardList, FaClock } from 'react-icons/fa';
 import { BsPatchCheckFill } from 'react-icons/bs';
 
+
 function Assignments() {
-    const navigate = useNavigate();
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
-
+    const [statusMap, setStatusMap] = useState({});
+    const navigate = useNavigate();
+    const studentClass = localStorage.getItem("studentClass");
+    const user = auth.currentUser;
     useEffect(() => {
         AOS.init({ duration: 1000 });
         fetchAssignments();
@@ -23,9 +24,26 @@ function Assignments() {
 
     const fetchAssignments = async () => {
         try {
-            const querySnapshot = await getDocs(collection(db, 'assignments'));
-            const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setAssignments(data);
+            setLoading(true);
+            const assignmentSnap = await getDocs(collection(db, 'assignments'));
+            const filtered = assignmentSnap.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(item => item.class === studentClass);
+
+            setAssignments(filtered);
+
+            // Fetch per-assignment status for the current student
+            const statusObj = {};
+            for (const a of filtered) {
+                const statusDoc = await getDoc(doc(db, 'assignment_status', `${user.uid}_${a.id}`));
+                if (statusDoc.exists()) {
+                    statusObj[a.id] = statusDoc.data().status;
+                } else {
+                    statusObj[a.id] = 'Pending';
+                }
+            }
+            setStatusMap(statusObj);
+
         } catch (err) {
             console.error("Failed to load assignments:", err);
         } finally {
@@ -33,13 +51,6 @@ function Assignments() {
         }
     };
 
-    const getStatusBadge = (status) => {
-        return (
-            <Badge pill bg={status?.toLowerCase() === 'completed' ? 'success' : 'warning'} className="px-3 py-2 text-uppercase">
-                {status}
-            </Badge>
-        );
-    };
 
     const formatDate = (inputDate) => {
         if (!inputDate) return '';
@@ -47,23 +58,24 @@ function Assignments() {
         if (isNaN(dateObj)) return inputDate;
         return `${String(dateObj.getDate()).padStart(2, '0')}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${dateObj.getFullYear()}`;
     };
-    const handleStatusChange = async (id, newStatus) => {
+
+    const handleStatusChange = async (assignmentId, newStatus) => {
         try {
-            const assignmentRef = doc(db, 'assignments', id);
-            await updateDoc(assignmentRef, { status: newStatus });
-
-            setAssignments(prev =>
-                prev.map(item =>
-                    item.id === id ? { ...item, status: newStatus } : item
-                )
-            );
-
+            const ref = doc(db, 'assignment_status', `${user.uid}_${assignmentId}`);
+            await setDoc(ref, {
+                studentId: user.uid,
+                assignmentId: assignmentId,
+                status: newStatus
+            });
+            setStatusMap(prev => ({ ...prev, [assignmentId]: newStatus }));
             toast.success(`Status updated to ${newStatus}`);
         } catch (err) {
             toast.error("Failed to update status");
             console.error(err);
         }
     };
+
+
     return (
         <div className="container py-5 mt-5">
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -82,7 +94,7 @@ function Assignments() {
                     <p className="mt-3">Loading assignments...</p>
                 </div>
             ) : assignments.length === 0 ? (
-                <p className="text-center fs-5 text-muted">No assignments available.</p>
+                <p className="text-center fs-5 text-muted">No assignments available for your class.</p>
             ) : (
                 <div className="table-responsive">
                     <table className="table table-bordered table-hover shadow-sm align-middle text-center rounded-4 overflow-hidden">
@@ -120,7 +132,7 @@ function Assignments() {
                                     </td>
                                     <td>
                                         <select
-                                            className={`form-select text-uppercase fw-bold ${item.status.toLowerCase() === 'completed' ? 'bg-success text-white' : 'bg-warning text-dark'}`}
+                                            className={`form-select text-uppercase fw-bold ${item.status?.toLowerCase() === 'completed' ? 'bg-success text-white' : 'bg-warning text-dark'}`}
                                             value={item.status}
                                             onChange={(e) => handleStatusChange(item.id, e.target.value)}
                                             style={{ minWidth: '120px' }}
@@ -128,7 +140,8 @@ function Assignments() {
                                             <option value="Pending">Pending</option>
                                             <option value="Completed">Completed</option>
                                         </select>
-                                    </td>                                </tr>
+                                    </td>
+                                </tr>
                             ))}
                         </tbody>
                     </table>

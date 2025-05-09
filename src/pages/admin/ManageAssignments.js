@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../../services/firebase';
+import { adminDb as db } from '../../services/firebase';
 import {
     collection,
     getDocs,
@@ -9,7 +9,7 @@ import {
     doc
 } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { FaEdit, FaTrash, FaArrowLeft, FaPlus, FaSync } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaArrowLeft, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 function ManageAssignments() {
@@ -22,7 +22,9 @@ function ManageAssignments() {
         description: '',
         link: '',
         postedon: '',
-        status: ''
+        status: '',
+        class: '',
+        batch: ''
     });
     const [editId, setEditId] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -94,6 +96,14 @@ function ManageAssignments() {
             minute: '2-digit'
         });
     };
+    const classOptions = [
+        ...Array.from({ length: 12 }, (_, i) => ({ value: `Class ${i + 1}`, label: `Class ${i + 1}` })),
+        { value: "LT", label: "LT" },
+        { value: "NEET Repeaters", label: "NEET Repeaters" },
+        { value: "Crash Course", label: "Crash Course" },
+        { value: "Integrated", label: "Integrated" },
+
+    ];
     return (
         <div className="container py-5">
             <button className="btn btn-outline-danger mb-3" onClick={() => navigate('/admin-dashboard')}>
@@ -105,25 +115,96 @@ function ManageAssignments() {
 
             <form className="card p-3 shadow-sm mb-4" onSubmit={handleSubmit}>
                 <div className="row g-3">
-                    <div className="col-md-4"><input name="subject" value={formData.subject} onChange={handleChange} className="form-control" placeholder="Subject/Exam" required /></div>
-                    <div className="col-md-4"><input name="title" value={formData.title} onChange={handleChange} className="form-control" placeholder="Title" required /></div>
-                    <div className="col-md-4"><input name="duedate" value={formData.duedate} onChange={handleChange} type="date" className="form-control" placeholder="Due Date" required /></div>
-                    <div className="col-md-6"><input name="description" value={formData.description} onChange={handleChange} className="form-control" placeholder="Description" required /></div>
-                    <div className="col-md-6"><input name="link" value={formData.link} onChange={handleChange} className="form-control" placeholder="Link (Optional)" /></div>
-                    <div className="col-md-4"><input name="postedon" value={formData.postedon} onChange={handleChange} type="date" className="form-control" placeholder="Posted On" required /></div>
                     <div className="col-md-4">
+                        <label className="form-label">Subject/Exam</label>
+                        <input name="subject" value={formData.subject} onChange={handleChange} className="form-control" placeholder="Subject/Exam" required />
+                    </div>
+
+                    <div className="col-md-4">
+                        <label className="form-label">Title</label>
+                        <input name="title" value={formData.title} onChange={handleChange} className="form-control" placeholder="Title" required />
+                    </div>
+
+                    <div className="col-md-4">
+                        <label className="form-label">Due Date & Time</label>
+                        <input
+                            name="duedate"
+                            value={formData.duedate}
+                            onChange={handleChange}
+                            type="datetime-local"
+                            className="form-control"
+                            required
+                        />
+                    </div>
+
+                    <div className="col-md-6">
+                        <label className="form-label">Description</label>
+                        <input name="description" value={formData.description} onChange={handleChange} className="form-control" placeholder="Description" required />
+                    </div>
+
+                    <div className="col-md-6">
+                        <label className="form-label">Link (Optional)</label>
+                        <input name="link" value={formData.link} onChange={handleChange} className="form-control" placeholder="Link (Optional)" />
+                    </div>
+
+                    <div className="col-md-4">
+                        <label className="form-label">Posted On</label>
+                        <input
+                            name="postedon"
+                            value={formData.postedon}
+                            onChange={handleChange}
+                            type="datetime-local"
+                            className="form-control"
+                            required
+                        />
+                    </div>
+
+                    <div className="col-md-4">
+                        <label className="form-label">Status</label>
                         <select name="status" value={formData.status} onChange={handleChange} className="form-select" required>
                             <option value="">-- Status --</option>
                             <option value="Pending">Pending</option>
                             <option value="Completed">Completed</option>
                         </select>
                     </div>
-                    <div className="col-md-4 text-end">
-                        <button className="btn btn-success">
+
+                    <div className="col-md-4">
+                        <label className="form-label">Class</label>
+                        <select
+                            className="form-select"
+                            name="class"
+                            value={formData.class}
+                            onChange={handleChange}
+                            required
+                        >
+                            <option value="">Select Class</option>
+                            {classOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="col-md-4">
+                        <label className="form-label">Batch</label>
+                        <input
+                            name="batch"
+                            value={formData.batch}
+                            onChange={handleChange}
+                            className="form-control"
+                            placeholder="Batch"
+                            required
+                        />
+                    </div>
+
+                    <div className="col-md-4 text-end align-self-end">
+                        <button className="btn btn-success w-100">
                             <FaPlus className="me-2" />{editId ? "Update" : "Add"}
                         </button>
                     </div>
                 </div>
+
             </form>
 
             {loading ? (
@@ -143,6 +224,8 @@ function ManageAssignments() {
                                 <th>Link</th>
                                 <th>Posted On</th>
                                 <th>Status</th>
+                                <th>Class</th>
+                                <th>Batch</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -159,9 +242,9 @@ function ManageAssignments() {
                                         <td>{a.description}</td>
                                         <td><a href={a.link} target="_blank" rel="noreferrer">View</a></td>
                                         <td>{formatDate(a.postedon)}</td>
-
                                         <td>{a.status}</td>
-
+                                        <td>{a.class}</td>
+                                        <td>{a.batch}</td>
                                         <td>
                                             <button className="btn btn-sm btn-info me-2" onClick={() => handleEdit(a)}><FaEdit /></button>
                                             <button className="btn btn-sm btn-danger" onClick={() => handleDelete(a.id)}><FaTrash /></button>

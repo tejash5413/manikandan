@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../../services/firebase';
+import { adminDb as db } from '../../services/firebase';
 import {
     collection,
     getDocs,
@@ -110,6 +110,7 @@ function ManageApplications() {
         { label: "Accommodation", key: "accommodation" },
         { label: "Submitted On", key: "submittedAt" }
     ];
+
     return (
         <div className="container py-5">
             <button className="btn btn-outline-danger mb-3" onClick={() => navigate('/admin-dashboard/manage-center')}>

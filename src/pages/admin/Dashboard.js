@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { toast } from 'react-toastify';
-import { getAuth, signOut } from 'firebase/auth';
-
+import { adminAuth as auth } from '../../services/firebase'; // ✅ admin instance
+import { signOut } from 'firebase/auth';
+import { getIdTokenResult } from 'firebase/auth';
 
 function AdminDashboard() {
     const navigate = useNavigate();
@@ -12,14 +13,24 @@ function AdminDashboard() {
     useEffect(() => {
         AOS.init({ duration: 1000 });
     }, []);
+    useEffect(() => {
+        const checkClaims = async () => {
+            const user = auth.currentUser;
+            if (user) {
+                const tokenResult = await user.getIdTokenResult(true); // 👈 force refresh
+                console.log("✅ Role:", tokenResult.claims.role); // Should print 'admin'
+            }
+        };
 
+        checkClaims();
+    }, []);
     const handleLogout = async () => {
-        const auth = getAuth();
         try {
-            await signOut(auth); // 🔐 Sign out from Firebase
+            await signOut(auth); // ✅ Uses imported adminAuth
             localStorage.removeItem('adminLoggedIn');
-            toast.success("👋 Logged out successfully!", { autoClose: 2000 });
             localStorage.removeItem('sessionToastShown'); // ✅ clear toast blocker
+            toast.success("👋 Logged out successfully!", { autoClose: 2000 });
+
 
             setTimeout(() => {
                 navigate('/admin-login');
@@ -29,6 +40,7 @@ function AdminDashboard() {
             console.error("Logout error:", error.message);
         }
     };
+
 
     return (
         <div className="container py-5">

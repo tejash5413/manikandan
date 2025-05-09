@@ -5,7 +5,7 @@ import { Atom } from 'react-loading-indicators';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../services/firebase'; // Adjust if needed
+import { adminDb as db } from '../../services/firebase';
 
 function Gallery() {
     const [gallery, setGallery] = useState([]);

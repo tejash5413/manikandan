@@ -8,7 +8,7 @@ import Lottie from 'lottie-react';
 import contactAnimation from './contact.json';
 import '../../index.css';
 import { addDoc, collection } from "firebase/firestore";
-import { db } from "../../services/firebase"; // Firebase config
+import { adminDb as db } from '../../services/firebase';
 
 function Contact() {
     useEffect(() => {

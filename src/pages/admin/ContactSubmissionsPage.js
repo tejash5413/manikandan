@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { adminDb as db } from '../../services/firebase';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { Spinner, Badge } from 'react-bootstrap';
@@ -77,7 +77,7 @@ function ContactSubmissionsPage() {
                 <FaEnvelope className="me-2" /> Contact Form Submissions
             </h2>
             <button className="btn btn-outline-danger mb-3" onClick={() => navigate('/admin-dashboard/manage-center')}>
-                <FaArrowLeft className="me-2" /> Back to Dashboard
+                <FaArrowLeft className="me-2" /> Back to Manage Center
             </button>
 
             {loading ? (

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { adminDb as db } from '../../services/firebase';
 import { toast } from 'react-toastify';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -13,7 +13,8 @@ const StudentsList = () => {
     const [editingStudent, setEditingStudent] = useState(null);
     const [filters, setFilters] = useState({ class: '', batch: '', search: '' });
     const navigate = useNavigate();
-
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
     const fetchStudents = async () => {
         try {
             const querySnapshot = await getDocs(collection(db, 'students_list'));
@@ -151,7 +152,7 @@ const StudentsList = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredStudents.map((s, idx) => (
+                                    {filteredStudents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((s, idx) => (
                                         <tr key={s.rollno}>
                                             <td>{idx + 1}</td>
                                             <td className="fw-semibold">{s.rollno}</td>
@@ -181,7 +182,25 @@ const StudentsList = () => {
                     )}
                 </div>
             </div>
+            <div className="d-flex justify-content-between align-items-center mt-3">
+                <button
+                    className="btn btn-outline-primary"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => prev - 1)}
+                >
+                    <i className="fas fa-chevron-left me-1"></i> Previous
+                </button>
 
+                <span className="fw-semibold">Page {currentPage}</span>
+
+                <button
+                    className="btn btn-outline-primary"
+                    disabled={currentPage * itemsPerPage >= filteredStudents.length}
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                >
+                    Next <i className="fas fa-chevron-right ms-1"></i>
+                </button>
+            </div>
             {/* Edit Modal */}
             {editingStudent && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ background: 'rgba(0,0,0,0.5)' }}>
@@ -203,7 +222,21 @@ const StudentsList = () => {
                                     </div>
                                     <div className="mb-2">
                                         <label className="form-label">Class</label>
-                                        <input type="text" className="form-control" name="class" value={editingStudent.class} onChange={handleChange} />
+                                        <select
+                                            className="form-select"
+                                            name="class"
+                                            value={editingStudent.class}
+                                            onChange={handleChange}
+                                            required
+                                        >
+                                            <option value="">Select Class</option>
+                                            {[
+                                                ...Array.from({ length: 12 }, (_, i) => `Class ${i + 1}`),
+                                                "LT", "NEET Repeaters", "Crash Course", "Integrated"
+                                            ].map((cls, idx) => (
+                                                <option key={idx} value={cls}>{cls}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div className="mb-2">
                                         <label className="form-label">Batch</label>
