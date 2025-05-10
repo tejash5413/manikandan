@@ -203,7 +203,14 @@ const CreateExamForm = () => {
                     toast.error("❌ Exam not found.");
                     return;
                 }
-
+                // 🕒 Auto-publish logic
+                if (examToLoad.Status === "Auto-Publish") {
+                    const scheduledTime = new Date(`${examToLoad.Date}T${examToLoad.Time}`);
+                    if (new Date() >= scheduledTime) {
+                        await updateDoc(doc(db, "exams", examToLoad.id), { Status: "Published" });
+                        examToLoad.Status = "Published";
+                    }
+                }
                 setExamDocId(examToLoad.id);
                 setFormData({
                     Title: examToLoad.Title,
@@ -618,6 +625,7 @@ const CreateExamForm = () => {
                 >
                     <option value="Draft">Draft</option>
                     <option value="Published">Published</option>
+                    <option value="Auto-Publish">Auto-Publish</option>
                 </select>
             </div>
             <div className="text-center mt-4">
