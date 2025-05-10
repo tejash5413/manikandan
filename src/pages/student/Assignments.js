@@ -132,8 +132,8 @@ function Assignments() {
                                     </td>
                                     <td>
                                         <select
-                                            className={`form-select text-uppercase fw-bold ${item.status?.toLowerCase() === 'completed' ? 'bg-success text-white' : 'bg-warning text-dark'}`}
-                                            value={item.status}
+                                            className={`form-select text-uppercase fw-bold ${statusMap[item.id] === 'Completed' ? 'bg-success text-white' : 'bg-warning text-dark'}`}
+                                            value={statusMap[item.id] || 'Pending'}
                                             onChange={(e) => handleStatusChange(item.id, e.target.value)}
                                             style={{ minWidth: '120px' }}
                                         >

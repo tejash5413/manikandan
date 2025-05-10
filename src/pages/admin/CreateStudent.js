@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
-import { adminAuth as auth, adminDb as db } from '../../services/firebase'; // Use admin instance
-
-
+import { adminAuth as auth, adminDb as db } from '../../services/firebase';
 
 const CreateStudent = () => {
     const navigate = useNavigate();
@@ -19,21 +17,6 @@ const CreateStudent = () => {
         class: '',
         batch: '',
     });
-    useEffect(() => {
-        const checkAdminRole = async () => {
-            const user = auth.currentUser;
-            if (user) {
-                const { claims } = await user.getIdTokenResult(true); // force refresh
-                console.log("✅ Admin Role Claim:", claims.role);
-                if (claims.role !== "admin") {
-                    toast.error("🚫 You are not authorized to access this page.");
-                    navigate("/admin-login");
-                }
-            }
-        };
-
-        checkAdminRole();
-    }, []);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -44,61 +27,79 @@ const CreateStudent = () => {
         const email = `${form.rollno}@student.com`;
 
         try {
-            // 🔁 Refresh token to ensure latest custom claims are available
+            // ✅ Ensure current user is admin
             const currentUser = auth.currentUser;
-            if (currentUser) {
-                await currentUser.getIdToken(true); // Force refresh
+            if (!currentUser) throw new Error("No admin user logged in");
+
+            const token = await currentUser.getIdTokenResult(true);
+            console.log("🔍 Token Claims:", token.claims);
+
+            if (token.claims.role !== "admin") {
+                toast.error("❌ You are not an admin.");
+                return;
             }
 
-            // 1️⃣ Check if student with this roll number already exists in list
+            // ✅ Check if student already exists
             const existing = await getDoc(doc(db, 'students_list', form.rollno));
             if (existing.exists()) {
                 toast.error("❌ Roll number already exists!");
                 return;
             }
 
-            // 2️⃣ Check if email is already registered (optional optimization)
-            // Note: This line alone may not help unless used with Admin SDK,
-            // so we rely on Firebase error codes below
-
-            // 3️⃣ Create student Auth user
+            // ✅ Create student auth account (this changes context to student!)
             const userCred = await createUserWithEmailAndPassword(auth, email, form.password);
             const uid = userCred.user.uid;
+            console.log("✅ Created student user:", uid);
 
-            // 4️⃣ Add to students collection
-            await setDoc(doc(db, 'students', uid), {
-                rollno: form.rollno,
-                name: form.name,
-                class: form.class,
-                batch: form.batch,
-                role: 'student'
+            // 🔁 Re-login as admin
+            await auth.signOut();
+            await signInWithEmailAndPassword(auth, "admin@manikandanacademy.com", "Admin@123");
+            console.log("🔁 Re-authenticating admin...");
+
+            // ⏳ Wait until admin is re-authenticated and role is confirmed
+            await new Promise((resolve, reject) => {
+                const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        const refreshed = await user.getIdTokenResult(true);
+                        if (refreshed.claims.role === 'admin') {
+                            console.log("✅ Admin session restored");
+                            unsubscribe();
+                            resolve();
+                        }
+                    }
+                });
             });
 
-            // 5️⃣ Add to students_list collection
-            await setDoc(doc(db, 'students_list', form.rollno), {
-                uid,
+            // ✅ Write to Firestore now as admin
+            const studentData = {
                 rollno: form.rollno,
                 name: form.name,
                 class: form.class,
                 batch: form.batch,
+                role: 'student',
+                uid,
+            };
+
+            await setDoc(doc(db, 'students', uid), studentData);
+            await setDoc(doc(db, 'students_list', form.rollno), {
+                ...studentData,
                 email,
-                password: form.password // stored for internal reference (optional)
+                password: form.password,
             });
 
             toast.success(`✅ Student ${form.rollno} created`);
             navigate('/admin-dashboard/students');
         } catch (err) {
+            console.error("CreateStudent error:", err);
             if (err.code === 'auth/email-already-in-use') {
-                toast.error("❌ Email already in use. Choose another roll number.");
+                toast.error("❌ Email already in use.");
             } else if (err.code === 'permission-denied') {
-                toast.error("❌ You don't have permission to create student. Make sure your admin token is valid.");
+                toast.error("❌ Permission denied.");
             } else {
                 toast.error(`❌ ${err.message}`);
-                console.error("CreateStudent error:", err);
             }
         }
     };
-
 
     const classOptions = [
         ...Array.from({ length: 12 }, (_, i) => ({ value: `Class ${i + 1}`, label: `Class ${i + 1}` })),
@@ -109,7 +110,7 @@ const CreateStudent = () => {
     ];
 
     useEffect(() => {
-        auth.currentUser?.getIdToken(true); // force refresh token (ensure latest custom claims)
+        auth.currentUser?.getIdToken(true); // refresh claims
     }, []);
 
     return (

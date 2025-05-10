@@ -20,28 +20,39 @@ function StudentDashboard() {
     useEffect(() => {
         AOS.init({ duration: 1000 });
 
-        let unsubDoc = () => { }; // fallback no-op
+        let unsubDoc = () => { };
 
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const studentRef = doc(db, 'students', user.uid);
-                unsubDoc = onSnapshot(studentRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        setStudent({
-                            name: data.name || '',
-                            rollno: data.rollno || '',
-                            class: data.class || '',
-                            batch: data.batch || ''
-                        });
-                        localStorage.setItem('studentRollno', data.rollno);
-                        localStorage.setItem('studentClass', data.class);
-                        setLoading(false);
-                    } else {
-                        toast.error("❌ Student profile not found.");
-                        navigate('/student-login');
-                    }
-                });
+                try {
+                    const tokenResult = await user.getIdTokenResult(true);
+                    const role = tokenResult.claims.role || 'student'; // fallback
+
+                    const studentRef = doc(db, 'students', user.uid);
+                    unsubDoc = onSnapshot(studentRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            setStudent({
+                                name: data.name || '',
+                                rollno: data.rollno || '',
+                                class: data.class || '',
+                                batch: data.batch || '',
+                                role: role // 👈 include the role
+                            });
+                            localStorage.setItem('studentRollno', data.rollno);
+                            localStorage.setItem('studentClass', data.class);
+                            localStorage.setItem('studentRole', role);
+
+                            setLoading(false);
+                        } else {
+                            toast.error("❌ Student profile not found.");
+                            navigate('/student-login');
+                        }
+                    });
+                } catch (error) {
+                    toast.error("⚠️ Failed to fetch student role.");
+                    navigate('/student-login');
+                }
             } else {
                 toast.error("⚠️ Please log in again.");
                 navigate('/student-login');
@@ -49,10 +60,11 @@ function StudentDashboard() {
         });
 
         return () => {
-            unsubscribe(); // auth listener
-            unsubDoc();    // Firestore listener
+            unsubscribe();
+            unsubDoc();
         };
     }, [navigate]);
+
 
 
     const handleLogout = async () => {
@@ -81,6 +93,9 @@ function StudentDashboard() {
                     <p><FaChalkboardTeacher className="me-2" /><strong>Class:</strong> {student.class} &nbsp; | &nbsp;
                         <FaCalendarAlt className="me-2" /><strong>Batch:</strong> {student.batch}</p>
                     <p className="fst-italic mt-3">💡 Stay consistent. Your hard work will pay off!</p>
+                    <p className="fst-italic mt-3"><p><strong>Role:</strong> {student.role}</p>
+                    </p>
+
                 </div>
             </div>
 
