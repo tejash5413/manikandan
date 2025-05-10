@@ -70,6 +70,8 @@ const CreateExamForm = () => {
                 answer: row.Answer || "",
                 subject: row.Subject || "General",
                 topic: row.Topic || "Untitled",
+                difficulty: row.Difficulty || "", // 🆕 Add this line
+
                 image: "", // default if not provided
             }));
             setPreviewQuestions(parsedQuestions); // 👈 This is the line
@@ -134,6 +136,7 @@ const CreateExamForm = () => {
         image: "",
         subject: "",
         topic: "",
+        difficulty: "",
     });
 
     const [editIndex, setEditIndex] = useState(null);
@@ -302,7 +305,7 @@ const CreateExamForm = () => {
             setExamDocId(newDoc.id);
         }
 
-        setQuestionInput({ q: "", options: ["", "", "", ""], answer: "", image: "", subject: "", topic: "" });
+        setQuestionInput({ q: "", options: ["", "", "", ""], answer: "", image: "", subject: "", topic: "", difficulty: "" });
         setEditIndex(null);
     };
 
@@ -573,7 +576,23 @@ const CreateExamForm = () => {
             <LiveLatexInput value={questionInput.answer} onChange={(val) => setQuestionInput({ ...questionInput, answer: val })} placeholder="Correct Answer" />
             <input type="text" className="form-control mb-2" placeholder="Subject" value={questionInput.subject} onChange={(e) => setQuestionInput({ ...questionInput, subject: e.target.value })} />
             <input type="text" className="form-control mb-3" placeholder="Topic" value={questionInput.topic} onChange={(e) => setQuestionInput({ ...questionInput, topic: e.target.value })} />
-
+            <div className="mb-3">
+                <label className="form-label fw-bold">
+                    <i className=" me-2 text-primary"></i>Difficulty Level
+                </label>
+                <select
+                    className="form-select border-primary  shadow-sm"
+                    value={questionInput.difficulty}
+                    onChange={(e) =>
+                        setQuestionInput({ ...questionInput, difficulty: e.target.value })
+                    }
+                >
+                    <option value="">🟡 Select Difficulty</option>
+                    <option value="Easy">🟢 Easy</option>
+                    <option value="Medium">🟠 Medium</option>
+                    <option value="Hard">🔴 Hard</option>
+                </select>
+            </div>
             <button type="button" className="btn btn-outline-primary me-2" onClick={handleAddOrUpdateQuestion}>
                 <i className="fas fa-plus me-1"></i>{editIndex !== null ? "Update" : "Add"} Question
             </button>
@@ -614,6 +633,9 @@ const CreateExamForm = () => {
                     <ul className="mt-2">{q.options.map((opt, i) => <li key={i}><Latex>{opt}</Latex></li>)}</ul>
                     <p><strong>Answer:</strong> <Latex>{q.answer}</Latex></p>
                     <p><strong>Subject:</strong> {q.subject} | <strong>Topic:</strong> {q.topic}</p>
+                    <p><strong>Difficulty:</strong> {q.difficulty || "—"}</p>
+
+
                 </div>
             ))}
             <div className="mb-3">

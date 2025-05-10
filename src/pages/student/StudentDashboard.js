@@ -11,6 +11,8 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { getDoc, doc, onSnapshot } from 'firebase/firestore';
 import { studentDb as db } from '../../services/firebase'; // ✅ Student context
 import { studentAuth as auth } from '../../services/firebase'; // ✅ CORRECT
+import Lottie from 'lottie-react';
+import loadingAnimation from "../../assets/loading.json"; // Adjust path as needed
 
 function StudentDashboard() {
     const navigate = useNavigate();
@@ -76,7 +78,12 @@ function StudentDashboard() {
     };
 
     if (loading || !student) {
-        return <div className="text-center mt-5 fw-bold">Loading your dashboard...</div>;
+        return (
+            <div className="d-flex flex-column align-items-center justify-content-center mt-5">
+                <Lottie animationData={loadingAnimation} style={{ height: '250px' }} />
+                <div className="fw-bold text-primary mt-3">Loading your dashboard...</div>
+            </div>
+        );
     }
 
     return (

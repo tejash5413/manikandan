@@ -40,6 +40,7 @@ import ExamSelectionPage from '../pages/admin/ExamSelectionPage';
 import StudentsList from '../pages/admin/StudentsList'; // ✅ should be default import
 import ManageApplicationsAndContactPage from '../pages/admin/ManageApplicationsAndContactPage';
 import ContactSubmissionsPage from '../pages/admin/ContactSubmissionsPage';
+import GenerateQuestions from '../pages/admin/GenerateQuestions'; // adjust path if needed
 
 function AppRoutes() {
     return (
@@ -144,7 +145,6 @@ function AppRoutes() {
                 </AdminPrivateRoute>
             } />
 
-
             <Route path="/admin-dashboard/create-exams" element={
                 <AdminPrivateRoute>
                     <CreateExamForm />
@@ -153,6 +153,11 @@ function AppRoutes() {
             <Route path="/admin-dashboard/select-exam" element={
                 <AdminPrivateRoute>
                     <ExamSelectionPage />
+                </AdminPrivateRoute>
+            } />
+            <Route path="/admin-dashboard/generate-paper" element={
+                <AdminPrivateRoute>
+                    <GenerateQuestions />
                 </AdminPrivateRoute>
             } />
             <Route path="/admin-dashboard/create-student" element={

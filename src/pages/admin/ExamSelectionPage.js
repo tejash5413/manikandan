@@ -74,8 +74,11 @@ const ExamSelectionPage = () => {
             <button className="btn btn-warning mb-4" onClick={() => navigate('/admin-dashboard')}>
                 <i className="fas fa-arrow-left me-1"></i> Back
             </button>
-            <button className="btn btn-success mb-4" onClick={() => navigate('/admin-dashboard/create-exams')}>
+            <button className="btn btn-success mb-4 ms-2" onClick={() => navigate('/admin-dashboard/create-exams')}>
                 <i className="fas fa-plus me-2"></i>Create New Exam
+            </button>
+            <button className="btn btn-outline-dark mb-4 ms-2" onClick={() => navigate('/admin-dashboard/generate-paper')}>
+                <i className="fas fa-file-alt me-2"></i> Generate Paper
             </button>
             <div className="mb-4">
                 <label className="form-label fw-bold me-2">Filter by Class:</label>
@@ -121,8 +124,8 @@ const ExamSelectionPage = () => {
                                         <label className="me-2"><strong>Status:</strong></label>
                                         <select
                                             className={`form-select form-select-sm d-inline-block w-auto ${exam.Status === 'Published' ? 'border-success text-success' :
-                                                    exam.Status === 'Auto-Publish' ? 'border-warning text-warning' :
-                                                        'border-secondary'
+                                                exam.Status === 'Auto-Publish' ? 'border-warning text-warning' :
+                                                    'border-secondary'
                                                 }`} value={exam.Status || 'Draft'}
                                             onChange={(e) => handleStatusChange(exam.id, e.target.value)}
                                         >
@@ -140,6 +143,7 @@ const ExamSelectionPage = () => {
                                 >
                                     <i className="fas fa-pen me-1"></i> Continue
                                 </button>
+
                                 <button
                                     className="btn btn-outline-danger mt-2"
                                     onClick={() => handleDeleteExam(exam.id, exam.Title)}
