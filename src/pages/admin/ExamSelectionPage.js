@@ -120,12 +120,16 @@ const ExamSelectionPage = () => {
                                     <div className="mt-2">
                                         <label className="me-2"><strong>Status:</strong></label>
                                         <select
-                                            className={`form-select form-select-sm d-inline-block w-auto ${exam.Status === 'Published' ? 'border-success text-success' : 'border-secondary'}`}
-                                            value={exam.Status || 'Draft'}
+                                            className={`form-select form-select-sm d-inline-block w-auto ${exam.Status === 'Published' ? 'border-success text-success' :
+                                                    exam.Status === 'Auto-Publish' ? 'border-warning text-warning' :
+                                                        'border-secondary'
+                                                }`} value={exam.Status || 'Draft'}
                                             onChange={(e) => handleStatusChange(exam.id, e.target.value)}
                                         >
                                             <option value="Draft">Draft</option>
                                             <option value="Published">Published</option>
+                                            <option value="Auto-Publish">Auto-Publish</option> {/* ✅ Add this line */}
+
                                         </select>
                                     </div>
                                 </div>
