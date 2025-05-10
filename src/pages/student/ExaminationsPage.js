@@ -47,7 +47,19 @@ const ExaminationsPage = () => {
                     })
                     .filter(exam => exam !== null); // ✅ remove disallowed exams
 
-                setExams(fetchedExams);
+                const now = new Date();
+
+                const autoPublishedExams = fetchedExams.map((exam) => {
+                    if (exam.Status === "Auto-Publish" && exam.Date && exam.Time) {
+                        const scheduledDateTime = new Date(`${exam.Date}T${exam.Time}`);
+                        if (now >= scheduledDateTime) {
+                            return { ...exam, Status: "Published" };
+                        }
+                    }
+                    return exam;
+                });
+
+                setExams(autoPublishedExams);
             } catch (error) {
                 console.error("Error fetching exams or results:", error);
                 toast.error("❌ Failed to load exams.");
