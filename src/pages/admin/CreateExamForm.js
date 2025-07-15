@@ -29,7 +29,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import * as XLSX from 'xlsx';
 import Select from 'react-select';
-
+import JoditEditor from 'jodit-react';
+import { useRef } from 'react';
 
 const CreateExamForm = () => {
     const navigate = useNavigate();
@@ -37,6 +38,8 @@ const CreateExamForm = () => {
 
     const [examDocId, setExamDocId] = useState(null);
     const location = useLocation();
+    const editorRef = useRef(null);
+  const optionRef = useRef(null);
 
     const [formData, setFormData] = useState({
         Title: "",
@@ -303,7 +306,12 @@ if (imageURL && imageURL.startsWith("blob:")) {
   }
 }
 
-        const updatedQuestion = { ...questionInput, image: imageURL };
+        const updatedQuestion = {
+  ...questionInput,
+  image: imageURL,
+  answerIndex: questionInput.answer, // store index like 0 for A, 1 for B
+  answer: questionInput.options[questionInput.answer] || "" // map to actual content
+};
         const updatedQuestions = [...formData.Questions];
 
         if (editIndex !== null) {
@@ -368,13 +376,13 @@ if (imageURL && imageURL.startsWith("blob:")) {
 
             <div className="mb-3">
                 <label className="form-label">Exam Title</label>
-                <input type="text" className="form-control" value={formData.Title} onChange={(e) => setFormData({ ...formData, Title: e.target.value })} />
+                <input type="text" className="form-control" value={formData.Title || ""} onChange={(e) => setFormData({ ...formData, Title: e.target.value })} />
             </div>
             <div className="mb-3">
   <label className="form-label">Exam Type</label>
   <select
     className="form-control"
-    value={formData.Type}
+    value={formData.Type || ""}
     onChange={(e) => setFormData({ ...formData, Type: e.target.value })}
   >
     <option value="">Select Type</option>
@@ -423,14 +431,14 @@ if (imageURL && imageURL.startsWith("blob:")) {
                 <div className="col">
                     <label className="form-label">Exam Date</label>
                     <input type="date" className="form-control"
-                        value={formData.Date}
+                        value={formData.Date || ""}
                         onChange={(e) => setFormData({ ...formData, Date: e.target.value })}
                     />
                 </div>
                 <div className="col">
                     <label className="form-label">Exam Time</label>
                     <input type="time" className="form-control"
-                        value={formData.Time}
+                        value={formData.Time || ""}
                         onChange={(e) => setFormData({ ...formData, Time: e.target.value })}
                     />
                 </div>
@@ -439,30 +447,30 @@ if (imageURL && imageURL.startsWith("blob:")) {
     <input
         type="time"
         className="form-control"
-        value={formData.EndTime}
+        value={formData.EndTime || ""}
         onChange={(e) => setFormData({ ...formData, EndTime: e.target.value })}
     />
 </div>
             </div>
             <div className="mb-3">
                 <label className="form-label">Duration (minutes)</label>
-                <input type="number" className="form-control" value={formData.Duration} onChange={(e) => setFormData({ ...formData, Duration: e.target.value })} />
+                <input type="number" className="form-control" value={formData.Duration || ""} onChange={(e) => setFormData({ ...formData, Duration: e.target.value })} />
             </div>
 
             <div className="row mb-3">
                 <div className="col">
                     <label className="form-label">Marks for Correct</label>
-                    <input type="number" className="form-control" value={formData.MarksPerCorrect} onChange={(e) => setFormData({ ...formData, MarksPerCorrect: Number(e.target.value) })} />
+                    <input type="number" className="form-control" value={formData.MarksPerCorrect || ""} onChange={(e) => setFormData({ ...formData, MarksPerCorrect: Number(e.target.value) })} />
                 </div>
                 <div className="col">
                     <label className="form-label">Marks for Wrong</label>
-                    <input type="number" className="form-control" value={formData.MarksPerWrong} onChange={(e) => setFormData({ ...formData, MarksPerWrong: Number(e.target.value) })} />
+                    <input type="number" className="form-control" value={formData.MarksPerWrong || ""} onChange={(e) => setFormData({ ...formData, MarksPerWrong: Number(e.target.value) })} />
                 </div>
             </div>
 
             <div className="mb-3">
                 <label className="form-label">Total Questions</label>
-                <input type="number" className="form-control" value={formData.TotalQuestions} onChange={(e) => setFormData({ ...formData, TotalQuestions: Number(e.target.value) })} />
+                <input type="number" className="form-control" value={formData.TotalQuestions || ""} onChange={(e) => setFormData({ ...formData, TotalQuestions: Number(e.target.value) })} />
             </div>
 
             <div className="mb-3">
@@ -500,31 +508,38 @@ if (imageURL && imageURL.startsWith("blob:")) {
                             <div className="card-body">
                                 <div className="mb-2">
                                     <label className="form-label fw-bold">Q{idx + 1}:</label>
-                                    <textarea
-                                        className="form-control"
-                                        value={q.q}
-                                        onChange={(e) => {
-                                            const updated = [...previewQuestions];
-                                            updated[idx].q = e.target.value;
-                                            setPreviewQuestions(updated);
-                                        }}
-                                    />
+                                   <JoditEditor
+  value={q.q}
+  onChange={(val) => {
+    const updated = [...previewQuestions];
+    updated[idx].q = val;
+    setPreviewQuestions(updated);
+  }}
+  config={{
+    readonly: false,
+    height: 120,
+  }}
+/>
                                 </div>
 
-                                {q.options.map((opt, optIdx) => (
-                                    <div key={optIdx} className="mb-2">
-                                        <label className="form-label">Option {optIdx + 1}</label>
-                                        <input
-                                            className="form-control"
-                                            value={opt}
-                                            onChange={(e) => {
-                                                const updated = [...previewQuestions];
-                                                updated[idx].options[optIdx] = e.target.value;
-                                                setPreviewQuestions(updated);
-                                            }}
-                                        />
-                                    </div>
-                                ))}
+                               {q.options.map((opt, optIdx) => (
+  <div key={optIdx} className="mb-2">
+    <label className="form-label">Option {optIdx + 1}</label>
+    <JoditEditor
+      value={opt}
+      onChange={(val) => {
+        const updated = [...previewQuestions];
+        updated[idx].options[optIdx] = val;
+        setPreviewQuestions(updated);
+      }}
+      config={{
+        readonly: false,
+        height: 80,
+      }}
+    />
+  </div>
+))}
+
 
                                 <div className="mb-2">
                                     <label className="form-label">Answer</label>
@@ -599,24 +614,28 @@ if (imageURL && imageURL.startsWith("blob:")) {
             <hr />
             <h5>{editIndex !== null ? "Edit Question" : "Add Question"}</h5>
 
-            <LiveLatexInput value={questionInput.q} onChange={(val) => setQuestionInput({ ...questionInput, q: val })} placeholder="Enter Question (LaTeX supported)" />
+<label className="form-label fw-bold">Question (Math Supported)</label>
+<JoditEditor
 
-            <textarea
-                className="form-control mb-2"
-                placeholder="Paste an image or enter image URL"
-                value={questionInput.image?.startsWith("blob:") ? "" : questionInput.image}
-                onChange={(e) => setQuestionInput({ ...questionInput, image: e.target.value })}
-                onPaste={(e) => {
-                    const item = [...e.clipboardData.items].find(i => i.type.includes("image"));
-                    if (item) {
-                        const blob = item.getAsFile();
-                        const localURL = URL.createObjectURL(blob);
-                        setQuestionInput({ ...questionInput, image: localURL });
-                        toast.info("🖼️ Image pasted (will upload on Add).");
-                        e.preventDefault();
-                    }
-                }}
-            />
+    ref={editorRef}
+    value={questionInput.q}
+    
+    config={{
+        readonly: false,
+    height: 200,
+    toolbarAdaptive: true,
+    toolbarSticky: true,
+    showCharsCounter: true,
+    showWordsCounter: true,
+    showXPathInStatusbar: true,
+    askBeforePasteHTML: true,
+    askBeforePasteFromWord: true,
+    defaultActionOnPaste: "insert_as_html",
+   }}
+    onBlur={(newContent) => {
+    setQuestionInput((prev) => ({ ...prev, q: newContent }));
+  }}
+/>
 
             {questionInput.image && (
                 <div className="mt-2">
@@ -627,11 +646,50 @@ if (imageURL && imageURL.startsWith("blob:")) {
                 </div>
             )}
 
-            {questionInput.options.map((opt, i) => (
-                <LiveLatexInput key={i} value={opt} onChange={(val) => handleOptionChange(i, val)} placeholder={`Option ${i + 1}`} />
-            ))}
+           {questionInput.options.map((opt, i) => {
+  return (
+    <div className="mb-2" key={i}>
+      <label className="form-label fw-bold">Option {String.fromCharCode(65 + i)}</label>
+      <JoditEditor
+        ref={optionRef}
+        config={{
+          readonly: false,
+          height: 120,
+          toolbarAdaptive: false,
+          toolbarSticky: false,
+          showCharsCounter: true,
+          showWordsCounter: true,
+          showXPathInStatusbar: true,
+          askBeforePasteHTML: false,
+          askBeforePasteFromWord: false,
+          defaultActionOnPaste: "insert_as_html"
+        }}
+        onBlur={(newContent) => {
+          const updated = [...questionInput.options];
+          updated[i] = newContent;
+          setQuestionInput(prev => ({
+            ...prev,
+            options: updated
+          }));
+        }}
+      />
+    </div>
+  );
+})}
 
-            <LiveLatexInput value={questionInput.answer} onChange={(val) => setQuestionInput({ ...questionInput, answer: val })} placeholder="Correct Answer" />
+<label className="form-label fw-bold">Answer</label>
+<select
+  className="form-select mb-3"
+  value={questionInput.answer}
+  onChange={(e) => setQuestionInput({ ...questionInput, answer: parseInt(e.target.value) })}
+>
+  <option value="">Select the correct option</option>
+  {questionInput.options.map((opt, i) => (
+    <option key={i} value={i}>
+      {String.fromCharCode(65 + i)}. {opt.replace(/<[^>]+>/g, '').slice(0, 40)}
+    </option>
+  ))}
+</select>
             <input type="text" className="form-control mb-2" placeholder="Subject" value={questionInput.subject} onChange={(e) => setQuestionInput({ ...questionInput, subject: e.target.value })} />
             <input type="text" className="form-control mb-3" placeholder="Topic" value={questionInput.topic} onChange={(e) => setQuestionInput({ ...questionInput, topic: e.target.value })} />
             <div className="mb-3">
@@ -686,10 +744,19 @@ if (imageURL && imageURL.startsWith("blob:")) {
                             <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteQuestion(formData.Questions.indexOf(q))}><i className="fas fa-trash"></i></button>
                         </div>
                     </div>
-                    <div className="mt-2">{q.q && <Latex>{q.q}</Latex>}</div>
+<div className="mt-2" dangerouslySetInnerHTML={{ __html: q.q }} />
                     {q.image && <img src={q.image} alt="q" className="img-fluid mt-2 rounded" />}
-                    <ul className="mt-2">{q.options.map((opt, i) => <li key={i}><Latex>{opt}</Latex></li>)}</ul>
-                    <p><strong>Answer:</strong> <Latex>{q.answer}</Latex></p>
+<ul className="mt-2">
+  {q.options.map((opt, i) => (
+    <li key={i} dangerouslySetInnerHTML={{ __html: opt }} />
+  ))}
+</ul>                   <p>
+  <strong>Answer:</strong>{" "}
+  {typeof q.answer === 'number' && q.options[q.answer]
+    ? `${String.fromCharCode(65 + q.answer)}. ${q.options[q.answer].replace(/<[^>]+>/g, '')}`
+    : q.answer || "Not Set"}
+</p>
+
                     <p><strong>Subject:</strong> {q.subject} | <strong>Topic:</strong> {q.topic}</p>
                     <p><strong>Difficulty:</strong> {q.difficulty || "—"}</p>
 

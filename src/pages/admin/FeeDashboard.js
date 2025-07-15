@@ -38,33 +38,33 @@ const dueTotal = expectedTotal - collectedTotal;
 const paidStudents = [...new Set(filteredLogs.map(l => l.rollno))]; 
 const unpaidCount = filteredStudents.length - paidStudents.length; 
 const activeThisMonth = logs.filter(l => l.paymentMonth === filterMonth).length; 
-const feeModeCount = logs.reduce((map, log) => { 
-const mode = log.paymentMode || 'Unknown'; 
-map[mode] = (map[mode] || 0) + (log.amountPaid || 0); 
-return map; 
-}, {}); 
-const monthlyCollection = {}; 
-logs.forEach(log => { 
-const m = log.paymentMonth; 
-monthlyCollection[m] = (monthlyCollection[m] || 0) + (log.amountPaid || 0); 
-}); 
-const chartData = { 
-labels: Object.keys(monthlyCollection), 
-datasets: [{ 
-label: 'Collected ₹', 
-data: Object.values(monthlyCollection), 
-backgroundColor: '#42a5f5' 
-}] 
-}; 
-const modePie = { 
-labels: Object.keys(feeModeCount), 
-datasets: [{ 
-label: 'Fee Mode', 
-data: Object.values(feeModeCount), 
+const feeModeCount = logs.reduce((map, log) => {
+const mode = log.paymentMode || 'Unknown';
+map[mode] = (map[mode] || 0) + (log.amountPaid || 0);
+return map;
+}, {});
+const monthlyCollection = {};
+logs.forEach(log => {
+const m = log.paymentMonth;
+monthlyCollection[m] = (monthlyCollection[m] || 0) + (log.amountPaid || 0);
+});
+const chartData = {
+labels: Object.keys(monthlyCollection),
+datasets: [{
+label: 'Collected ₹',
+data: Object.values(monthlyCollection),
+backgroundColor: '#42a5f5'
+}]
+};
+const modePie = {
+labels: Object.keys(feeModeCount),
+datasets: [{
+label: 'Fee Mode',
+data: Object.values(feeModeCount),
 backgroundColor: ['#ff9800', '#4caf50', '#2196f3', '#9c27b0'] 
-}] 
-}; 
-return ( 
+}]
+};
+return (
 <div className="container py-4"> 
 <h4 className="mb-4">📊 Detailed Fee Dashboard</h4> 
 <div className="row mb-3"> 

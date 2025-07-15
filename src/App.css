@@ -9,7 +9,18 @@
   height: 40vmin;
   pointer-events: none;
 }
+.circular-description img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin-bottom: 10px;
+}
 
+.circular-description {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;

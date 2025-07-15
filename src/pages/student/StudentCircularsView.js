@@ -16,30 +16,47 @@ const StudentCircularsView = () => {
     const [modalShow, setModalShow] = useState(false);
     const [previewData, setPreviewData] = useState(null);
 
-    const fetchCirculars = async () => {
-        try {
-            const snapshot = await getDocs(collection(db, "circulars"));
-            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            list.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
-            setCirculars(list);
-
-            // extract unique tags
-            const tagSet = new Set();
-            list.forEach(item => item.tag && tagSet.add(item.tag));
-            setTags([...tagSet]);
-        } catch (err) {
-            toast.error("❌ Failed to load circulars");
-            console.error(err);
-        }
-    };
-
     useEffect(() => {
+        const fetchCirculars = async () => {
+            try {
+                const snapshot = await getDocs(collection(db, "circulars"));
+                const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                list.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+                setCirculars(list);
+
+                const tagSet = new Set();
+                list.forEach(item => item.tag && tagSet.add(item.tag));
+                setTags([...tagSet]);
+            } catch (err) {
+                console.error(err);
+                toast.error("❌ Failed to load circulars");
+            }
+        };
         fetchCirculars();
     }, []);
 
     const isExpired = (expiryDate) => {
         if (!expiryDate) return false;
         return new Date(expiryDate) < new Date();
+    };
+
+    const isNew = (uploadedAt) => {
+        const uploadedDate = new Date(uploadedAt);
+        const diffMs = new Date() - uploadedDate;
+        return diffMs <= 3 * 24 * 60 * 60 * 1000; // within 3 days
+    };
+
+    const extractDownloadLinks = (html) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const links = [...doc.querySelectorAll("a[href]")];
+        return links.filter(link =>
+            link.href.includes("https://") &&
+            (link.href.endsWith(".pdf") ||
+                link.href.endsWith(".xlsx") ||
+                link.href.endsWith(".xls") ||
+                link.href.endsWith(".docx"))
+        );
     };
 
     const filtered = circulars.filter(c => {
@@ -69,8 +86,7 @@ const StudentCircularsView = () => {
 
             {/* 🔍 Filters */}
             <div className="row g-3 align-items-end mb-4">
-                {/* 🔍 Search Field */}
-                <div className="col-md-3 col-sm-6">
+                <div className="col-md-3">
                     <label className="form-label">Search</label>
                     <input
                         type="text"
@@ -80,9 +96,7 @@ const StudentCircularsView = () => {
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
-
-                {/* 🏷️ Tag Dropdown */}
-                <div className="col-md-2 col-sm-6">
+                <div className="col-md-2">
                     <label className="form-label">Filter by Tag</label>
                     <select
                         className="form-select"
@@ -95,10 +109,8 @@ const StudentCircularsView = () => {
                         ))}
                     </select>
                 </div>
-
-                {/* 📅 From Date */}
-                <div className="col-md-2 col-sm-6">
-                    <label className="form-label">From Date</label>
+                <div className="col-md-2">
+                    <label className="form-label">From</label>
                     <input
                         type="date"
                         className="form-control"
@@ -106,10 +118,8 @@ const StudentCircularsView = () => {
                         onChange={(e) => setDateFrom(e.target.value)}
                     />
                 </div>
-
-                {/* 📅 To Date */}
-                <div className="col-md-2 col-sm-6">
-                    <label className="form-label">To Date</label>
+                <div className="col-md-2">
+                    <label className="form-label">To</label>
                     <input
                         type="date"
                         className="form-control"
@@ -117,9 +127,7 @@ const StudentCircularsView = () => {
                         onChange={(e) => setDateTo(e.target.value)}
                     />
                 </div>
-
-                {/* ✅ Hide Expired */}
-                <div className="col-md-2 col-sm-12 d-flex align-items-center pt-3">
+                <div className="col-md-3 d-flex align-items-center pt-3">
                     <input
                         type="checkbox"
                         className="form-check-input me-2"
@@ -127,83 +135,93 @@ const StudentCircularsView = () => {
                         checked={hideExpired}
                         onChange={(e) => setHideExpired(e.target.checked)}
                     />
-                    <label htmlFor="hideExpired" className="form-check-label">
-                        Hide Expired
-                    </label>
+                    <label htmlFor="hideExpired" className="form-check-label">Hide Expired</label>
                 </div>
             </div>
 
-
-            {/* 📜 Circular Cards */}
+            {/* 🧾 Circular Cards */}
             <div className="row" style={{ maxHeight: "70vh", overflowY: "auto" }}>
                 {filtered.length === 0 ? (
-                    <p className="">No circulars found.</p>
+                    <p>No circulars found.</p>
                 ) : (
-                    filtered.map(item => (
-                        <div className="col-md-6 col-lg-4 mb-3" key={item.id}>
-                            <div className="card shadow-sm h-100 border-0">
-                                <div className="card-body d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 className="fw-bold">{item.title}</h6>
-                                        {item.description && <p className="text-muted small">{item.description}</p>}
-                                        {item.tag && <span className="badge bg-info text-dark me-2">{item.tag}</span>}
-                                        {item.expiryDate && (
-                                            <p className="text-danger small mt-2 mb-1">
-                                                ⏳ Expires: {new Date(item.expiryDate).toLocaleDateString()}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-2 d-flex justify-content-between">
-                                        <button
-                                            className="btn btn-sm btn-outline-primary"
-                                            onClick={() => openPreview(item)}
-                                        >
-                                            Preview
-                                        </button>
-                                        <a
-                                            href={item.fileURL}
-                                            className="btn btn-sm btn-outline-secondary"
-                                            download
-                                        >
-                                            <i className="fas fa-download me-1"></i>Download
-                                        </a>
+                    filtered.map(item => {
+                        const expired = isExpired(item.expiryDate);
+                        const downloadLinks = extractDownloadLinks(item.description || "");
+                        return (
+                            <div className="col-md-6 col-lg-4 mb-3" key={item.id}>
+                                <div className={`card shadow-sm h-100 border-0 ${expired ? "bg-light text-muted" : ""}`}>
+                                    <div className="card-body d-flex flex-column justify-content-between">
+                                        <div>
+                                            <h6 className="fw-bold">
+                                                {item.title}
+                                                {isNew(item.uploadedAt) && (
+                                                    <span className="badge bg-success ms-2">New</span>
+                                                )}
+                                            </h6>
+                                            <div
+                                                className="small text-muted mb-2"
+                                                dangerouslySetInnerHTML={{ __html: item.description }}
+                                            />
+                                            {item.tag && (
+                                                <span className="badge bg-info text-dark me-2">{item.tag}</span>
+                                            )}
+                                            {item.expiryDate && (
+                                                <p className="text-danger small mt-2 mb-1">
+                                                    ⏳ Expires: {new Date(item.expiryDate).toLocaleDateString()}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="mt-2 d-flex justify-content-between flex-wrap">
+                                            <button
+                                                className="btn btn-sm btn-outline-primary mb-1"
+                                                onClick={() => openPreview(item)}
+                                            >
+                                                <i className="fas fa-eye me-1"></i>Preview
+                                            </button>
+                                            {downloadLinks.map((link, idx) => {
+                                                const fileTypeIcon = link.href.endsWith(".pdf")
+                                                    ? "fa-file-pdf"
+                                                    : link.href.endsWith(".xls") || link.href.endsWith(".xlsx")
+                                                        ? "fa-file-excel"
+                                                        : "fa-file-alt";
+                                                return (
+                                                    <a
+                                                        key={idx}
+                                                        href={link.href}
+                                                        className="btn btn-sm btn-outline-secondary mb-1"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        download
+                                                    >
+                                                        <i className={`fas ${fileTypeIcon} me-1`}></i>
+                                                        {link.textContent || "Download"}
+                                                    </a>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 
-            {/* 🖼 Modal Preview */}
-            {previewData && (
-                <Modal show={modalShow} onHide={() => setModalShow(false)} size="lg" centered>
-                    <Modal.Header closeButton>
-                        <Modal.Title>{previewData.title}</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body style={{ minHeight: "500px" }}>
-                        {previewData.fileType?.includes("pdf") ? (
-                            <iframe
-                                src={previewData.fileURL}
-                                title="PDF Preview"
-                                style={{ width: "100%", height: "450px", border: "none" }}
-                            ></iframe>
-                        ) : (
-                            <img
-                                src={previewData.fileURL}
-                                alt="Circular"
-                                className="img-fluid"
-                            />
-                        )}
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setModalShow(false)}>
-                            Close
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
-            )}
+            {/* 🔍 Preview Modal */}
+            <Modal show={modalShow} onHide={() => setModalShow(false)} size="lg" centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>{previewData?.title}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+                    <div
+                        dangerouslySetInnerHTML={{ __html: previewData?.description }}
+                        className="text-muted"
+                    />
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setModalShow(false)}>Close</Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 };
